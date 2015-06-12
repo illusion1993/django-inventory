@@ -1,0 +1,3 @@
+- fields: {domain: 'project_name.com', name: 'project_name.com'}
+  model: sites.site
+  pk: 1
