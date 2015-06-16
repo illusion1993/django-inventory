@@ -174,14 +174,8 @@ DJANGO_APPS = (
 )
 
 THIRD_PARTY_APPS = (
-    # Database migration helpers:
-    'south',
-
     # Static file management:
     'compressor',
-
-    # Asynchronous task queue:
-    'djcelery',
 )
 
 LOCAL_APPS = (
