@@ -12,7 +12,7 @@ BASE_DIR = dirname(abspath(__file__))
 
 ########## DEBUG CONFIGURATION
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#debug
-DEBUG = False
+DEBUG = True
 ########## END DEBUG CONFIGURATION
 
 
@@ -176,6 +176,7 @@ DJANGO_APPS = (
 THIRD_PARTY_APPS = (
     # Static file management:
     'compressor',
+    'manager',
 )
 
 LOCAL_APPS = (
@@ -264,3 +265,5 @@ TEMPLATE_DEBUG = DEBUG
 
 
 COMPRESS_URL = STATIC_URL
+
+AUTH_USER_MODEL = 'manager.User'

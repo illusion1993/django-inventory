@@ -1,0 +1,20 @@
+<html>
+<head>
+    <title>Return Items</title>
+</head>
+<body>
+    <h1>All Provisions</h1>
+    <ul>
+        {% for unit in object_list %}
+        <li>
+            {{ unit.item.name }}
+            --
+            {{ unit.user.email }}
+            --
+            <a href="/items/return/{{ unit.id }}">Mark returned</a>
+
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

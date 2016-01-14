@@ -1,0 +1,22 @@
+<html>
+<head>
+    <title>Items</title>
+</head>
+<body>
+    <h1>Items</h1>
+    <ul>
+        {% for item in object_list %}
+        <li>
+            {{ item.name }}
+            {% if request.user.is_admin %}
+                <a href="/items/{{ item.id }}">edit item</a>
+            {% endif %}
+
+            {% if not request.user.is_admin and request.user.is_authenticated %}
+                <a href="#">request item</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
