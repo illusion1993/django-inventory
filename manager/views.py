@@ -60,7 +60,7 @@ class EditProfileView(UpdateView):
 
 class DashboardView(TemplateView):
 
-    template_name = 'dashboard.html'
+    template_name = 'dashboard_user.html'
 
 
 class ItemListView(ListView):
