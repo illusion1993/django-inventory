@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Login{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <form role="form" method="POST" action="">
+                {% csrf_token %}
+                <fieldset>
+                    <div class="form-group">
+                        <input class="form-control" placeholder="E-mail" name="email" type="email" autofocus="" {% if email %}value="{{ email }}{% endif %}">
+                    </div>
+                    <div class="form-group">
+                        <input class="form-control" placeholder="Password" name="password" type="password" value="">
+                    </div>
+                    <button class="btn btn-primary pull-right">Login</button>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+{% endblock %}

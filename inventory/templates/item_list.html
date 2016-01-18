@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Inventory Management|Items{% endblock %}
+{% block content %}
+    <h1>Items</h1>
+    <table class="table-bordered table-striped">
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Returnable</th>
+            <th>Quantity</th>
+        </tr>
+        {% for item in object_list %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.description|truncatechars:80 }}</td>
+            <td>{% if item.returnable %}Yes{% else %}No{% endif %}</td>
+            <td>{{ item.quantity }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

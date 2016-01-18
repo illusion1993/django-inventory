@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Home{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2 text-center">
+            <h1>Welcome to Inventory Management System.</h1>
+            {% if not request.user.is_authenticated %}
+            <h1>Please <a href="{% url 'login' %}">Login</a> to continue</h1>
+            {% else %}
+            <h1>You can continue to your <a href="{% url 'dashboard' %}">Dashboard</a></h1>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

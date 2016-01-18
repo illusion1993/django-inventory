@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Inventory Management|Edit Item{% endblock %}
+{% if messages %}
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+{% endif %}
+
+{% block content %}
+    <h1>Edit Item</h1>
+    <form method="POST" class="item-form">{% csrf_token %}
+        <p>
+            <label>Item Name:</label> <span>{{ item.name }}</span>
+        </p>
+        {{ form.as_p }}
+        <p>
+            <label>Returnable:</label> <input type="checkbox" disabled {% if item.returnable %} checked {% endif %}/>
+        </p>
+        <button type="submit" class="save btn btn-default">Save</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-default">Cancel</a>
+    </form>
+{% endblock %}

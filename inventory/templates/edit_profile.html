@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Edit Profile{% endblock %}
+
+{% block content %}
+
+    <h1>Edit Profile</h1>
+    <form method="POST" class="item-form" enctype="multipart/form-data">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="save btn btn-default">Save</button>
+        <a href="{% url 'profile' %}" class="btn btn-default">Cancel</a>
+    </form>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Return Item{% endblock %}
+
+{% if messages %}
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+{% endif %}
+
+{% block content %}
+
+    <h1>Return Item</h1>
+
+    <p><b>{{ provision.item.name }}</b> issued to <b>{{ provision.user.email }}</b> has been marked returned.</p>
+
+
+    <a href="{{ referrer }}">Go back</a>
+{% endblock %}

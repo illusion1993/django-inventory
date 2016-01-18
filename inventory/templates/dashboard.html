@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="table-container">
+    <h1>Pending Requests</h1>
+    <table class="table-striped table-bordered">
+        <tr>
+            <th>Item</th>
+            {% if is_admin %}
+                <th>Link to provision</th>
+            {% else %}
+                <th>Description</th>
+            {% endif %}
+        </tr>
+        {% for request in pending %}
+            <tr>
+                <td>{{ request.item.name }}</td>
+                <td>
+                    {% if is_admin %}
+                        <a href="{% url 'provision_form' %}{{ request.id }}">Provision Item</a>
+                    {% else %}
+                        {{ request.item.description|truncatechars:80 }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+<div class="table-container">
+    <h1>Approved Requests</h1>
+    <table class="table-striped table-bordered">
+        <tr>
+            <th>Item</th>
+            <th>Description</th>
+            <th>Returnable</th>
+            <th>Return by date</th>
+            {% if is_admin %}
+            <th>User</th>
+            <th>Returned</th>
+            <th>Return Item</th>
+            {% endif %}
+
+        </tr>
+        {% for request in approved %}
+            <tr>
+                <td>{{ request.item.name }}</td>
+                <td>{{ request.item.description|truncatechars:100 }}</td>
+                <td>{% if request.item.returnable %}
+                        Yes
+                    {% else %}
+                        No
+                    {% endif %}</td>
+                <td>{% if request.item.returnable %}
+                        {{ request.return_by }}
+                    {% else %}
+                        N/A
+                    {% endif %}</td>
+                {% if is_admin %}
+                <td>{{ request.user }}</td>
+                <td>{% if request.item.returnable and request.item.returned %}
+                        Yes
+                    {% elif request.item.returnable and not request.item.returned %}
+                        No
+                    {% else %}
+                        N/A
+                    {% endif %}</td>
+                <td>{% if request.item.returnable and request.item.returned %}
+                        Returned
+                    {% elif request.item.returnable and not request.item.returned %}
+                        <a href="{% url 'provision_list' %}{{ request.id }}">Mark Returned</a>
+                    {% else %}
+                        N/A
+                    {% endif %}</td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

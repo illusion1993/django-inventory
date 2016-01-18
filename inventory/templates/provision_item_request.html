@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Inventory Management|Provision Item{% endblock %}
+{% if messages %}
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+{% endif %}
+{% block content %}
+    <h1>Provision Item By Request</h1>
+    <form method="POST" class="item-form">{% csrf_token %}
+        <p>
+            <label for="id_item">User:</label>
+            <select id="id_item" name="item" disabled>
+                <option selected>{{ provision.user.email }}</option>
+            </select>
+        </p>
+        {{ form.as_p }}
+        <button type="submit" class="save btn btn-default">Save</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-default">Cancel</a>
+    </form>
+{% endblock %}
