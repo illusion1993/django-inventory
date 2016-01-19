@@ -1,10 +1,7 @@
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.conf.urls import patterns, include, url
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.http import Http404
-from django.views.generic import TemplateView
 
 from inventory.urls import inventory_urlpatterns
 
