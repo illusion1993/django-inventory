@@ -41,7 +41,7 @@
                 {% if request.user.is_admin %}
                 <li><a href="{% url 'add_item' %}">Create Item</a></li>
                 <li><a href="{% url 'edit_item_list' %}">Edit Item</a></li>
-                <li><a href="{% url 'provision_form' %}">Provision Item</a></li>
+                <li><a href="{% url 'provision_item' %}">Provision Item</a></li>
                     <li><a href="{% url 'provision_list' %}">Return Item</a></li>
                 {% else %}
                 <li><a href="{% url 'request_item' %}">Request Item</a></li>
@@ -71,7 +71,7 @@
                     {% if request.user.is_admin %}
                     <li><a href="{% url 'add_item' %}">Create Item</a></li>
                     <li><a href="{% url 'edit_item_list' %}">Edit Item</a></li>
-                    <li><a href="{% url 'provision_form' %}">Provision Item</a></li>
+                    <li><a href="{% url 'provision_item' %}">Provision Item</a></li>
                     <li><a href="{% url 'provision_list' %}">Return Item</a></li>
                     {% else %}
                     <li><a href="{% url 'request_item' %}">Request Item</a></li>
