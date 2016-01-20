@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from inventory.models import User, Item, Provision
 
-
+# Forms for admin panel
 class CustomUserCreationForm(UserCreationForm):
     """Form to create new user"""
 
@@ -15,6 +15,7 @@ class CustomUserCreationForm(UserCreationForm):
         super(CustomUserCreationForm, self).__init__(*args, **kwargs)
 
     class Meta:
+        """Meta Class"""
         model = User
         fields = (
             'email',
@@ -28,14 +29,17 @@ class CustomUserChangeForm(UserChangeForm):
         super(CustomUserChangeForm, self).__init__(*args, **kwargs)
 
     class Meta:
+        """Meta Class"""
         model = User
         exclude = ()
 
 
+# Forms for inventory admins
 class EditProfileForm(forms.ModelForm):
     """Form to update profile"""
 
     class Meta:
+        """Meta Class"""
         model = User
         fields = [
             'first_name',
@@ -61,6 +65,7 @@ class AddItemForm(forms.ModelForm):
         return quantity
 
     class Meta:
+        """Meta Class"""
         model = Item
         fields = (
             'name',
@@ -84,6 +89,7 @@ class EditItemForm(forms.ModelForm):
         return quantity
 
     class Meta:
+        """Meta Class"""
         model = Item
         fields = (
             'description',
@@ -102,6 +108,7 @@ class ProvisionItemForm(forms.ModelForm):
             'user'].queryset.exclude(is_admin=True)
 
     class Meta:
+        """Meta Class"""
         model = Provision
         fields = (
             'item',
@@ -118,6 +125,7 @@ class ProvisionItemByRequestForm(forms.ModelForm):
             'item'].queryset.exclude(quantity=0)
 
     def save(self, commit=True):
+        """Save method marks a provision request approved, adds other info"""
         ins = super(ProvisionItemByRequestForm, self).save(commit=False)
         ins.approved = True
         ins.approved_on = timezone.now()
@@ -130,6 +138,7 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         return ins
 
     class Meta:
+        """Meta Class"""
         model = Provision
         fields = (
             'item',
@@ -145,6 +154,7 @@ class RequestItemForm(forms.ModelForm):
             'item'].queryset.exclude(quantity=0)
 
     class Meta:
+        """Meta Class"""
         model = Provision
         fields = (
             'item',

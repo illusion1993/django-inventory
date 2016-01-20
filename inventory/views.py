@@ -228,25 +228,6 @@ class EditItemView(UpdateView):
         return super(EditItemView, self).form_valid(form)
 
 
-# class RequestItemView(CreateView):
-#     """View for requesting an item"""
-#
-#     template_name = 'request_item.html'
-#     form_class = RequestItemForm
-#     success_url = reverse_lazy('dashboard')
-#
-#     def get_initial(self):
-#         """Get the info about requesting user and send it to form"""
-#         initial = super(RequestItemView, self).get_initial()
-#         initial['user'] = self.request.user
-#         return initial
-#
-#     def form_valid(self, form):
-#         """Pass message and save request"""
-#         messages.success(self.request, "Your request has been submitted")
-#         return super(RequestItemView, self).form_valid(form)
-
-
 class RequestItemView(FormView):
     """View for requesting an item"""
 
