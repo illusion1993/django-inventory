@@ -16,7 +16,9 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("email",)
+        fields = (
+            'email',
+        )
 
 
 class CustomUserChangeForm(UserChangeForm):
@@ -30,7 +32,7 @@ class CustomUserChangeForm(UserChangeForm):
         exclude = ()
 
 
-class ProfileUpdateForm(forms.ModelForm):
+class EditProfileForm(forms.ModelForm):
     """Form to update profile"""
 
     class Meta:
@@ -53,13 +55,19 @@ class AddItemForm(forms.ModelForm):
 
         if quantity <= 0:
             raise forms.ValidationError(
-                "Please enter a valid quantity")
+                "Please enter a valid quantity"
+            )
 
         return quantity
 
     class Meta:
         model = Item
-        fields = ('name', 'description', 'returnable', 'quantity')
+        fields = (
+            'name',
+            'description',
+            'returnable',
+            'quantity'
+        )
 
 
 class EditItemForm(forms.ModelForm):
@@ -70,13 +78,17 @@ class EditItemForm(forms.ModelForm):
 
         if quantity <= 0:
             raise forms.ValidationError(
-                "Please enter a valid quantity")
+                "Please enter a valid quantity"
+            )
 
         return quantity
 
     class Meta:
         model = Item
-        fields = ('description', 'quantity')
+        fields = (
+            'description',
+            'quantity'
+        )
 
 
 class ProvisionItemForm(forms.ModelForm):
@@ -89,25 +101,12 @@ class ProvisionItemForm(forms.ModelForm):
         self.fields['user'].queryset = self.fields[
             'user'].queryset.exclude(is_admin=True)
 
-    def save(self, commit=True):
-        ins = super(ProvisionItemForm, self).save(commit=False)
-        ins.approved = True
-        ins.approved_on = timezone.now()
-        ins.return_by = timezone.now() + timedelta(days=7)
-        ins.quantity = 1
-
-        item = Item.objects.get(id=self.cleaned_data['item'].id)
-        item.quantity -= 1
-
-        if commit:
-            ins.save()
-            item.save()
-
-        return ins
-
     class Meta:
         model = Provision
-        fields = ('item', 'user')
+        fields = (
+            'item',
+            'user'
+        )
 
 
 class ProvisionItemByRequestForm(forms.ModelForm):
@@ -132,26 +131,21 @@ class ProvisionItemByRequestForm(forms.ModelForm):
 
     class Meta:
         model = Provision
-        fields = ('item',)
+        fields = (
+            'item',
+        )
 
 
 class RequestItemForm(forms.ModelForm):
     """Form to request an item"""
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs['initial']['user']
         super(RequestItemForm, self).__init__(*args, **kwargs)
         self.fields['item'].queryset = self.fields[
             'item'].queryset.exclude(quantity=0)
 
-    def save(self, commit=True):
-        ins = super(RequestItemForm, self).save(commit=False)
-        ins.user = self.user
-        if commit:
-            ins.save()
-
-        return ins
-
     class Meta:
         model = Provision
-        fields = ('item',)
+        fields = (
+            'item',
+        )

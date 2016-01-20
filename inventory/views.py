@@ -1,4 +1,6 @@
 """Inventory app views"""
+from datetime import timedelta
+
 from django.contrib import auth, messages
 from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse_lazy
@@ -13,14 +15,14 @@ from django.views.generic import (
     UpdateView,
     CreateView,
     ListView,
-    TemplateView)
+    TemplateView, FormView)
 
 from inventory.models import (
     Provision,
     Item,
     User)
 from inventory.forms import (
-    ProfileUpdateForm,
+    EditProfileForm,
     AddItemForm,
     EditItemForm,
     RequestItemForm,
@@ -144,11 +146,11 @@ class ProfileView(DetailView):
         return obj
 
 
-class ProfileUpdateView(UpdateView):
+class EditProfileView(UpdateView):
     """View for profile update page"""
 
     model = User
-    form_class = ProfileUpdateForm
+    form_class = EditProfileForm
     template_name = 'edit_profile.html'
     success_url = reverse_lazy('profile')
 
@@ -158,12 +160,12 @@ class ProfileUpdateView(UpdateView):
         return obj
 
 
-class ItemsView(ListView):
+class ItemsListView(ListView):
     """View for list of items"""
 
     model = Item
     context_object_name = 'item_list'
-    template_name = 'item_list.html'
+    template_name = 'items_list.html'
 
 
 class AddItemView(CreateView):
@@ -193,7 +195,7 @@ class AddItemView(CreateView):
         return super(AddItemView, self).form_valid(form)
 
 
-class EditItemsListView(ListView):
+class EditItemListView(ListView):
     """View for list of items to edit from"""
 
     model = Item
@@ -226,21 +228,36 @@ class EditItemView(UpdateView):
         return super(EditItemView, self).form_valid(form)
 
 
-class RequestItemView(CreateView):
+# class RequestItemView(CreateView):
+#     """View for requesting an item"""
+#
+#     template_name = 'request_item.html'
+#     form_class = RequestItemForm
+#     success_url = reverse_lazy('dashboard')
+#
+#     def get_initial(self):
+#         """Get the info about requesting user and send it to form"""
+#         initial = super(RequestItemView, self).get_initial()
+#         initial['user'] = self.request.user
+#         return initial
+#
+#     def form_valid(self, form):
+#         """Pass message and save request"""
+#         messages.success(self.request, "Your request has been submitted")
+#         return super(RequestItemView, self).form_valid(form)
+
+
+class RequestItemView(FormView):
     """View for requesting an item"""
 
     template_name = 'request_item.html'
     form_class = RequestItemForm
     success_url = reverse_lazy('dashboard')
 
-    def get_initial(self):
-        """Get the info about requesting user and send it to form"""
-        initial = super(RequestItemView, self).get_initial()
-        initial['user'] = self.request.user
-        return initial
-
     def form_valid(self, form):
-        """Pass message and save request"""
+        """Save provision object, Pass message and save request"""
+        form.instance.user = self.request.user
+        form.instance.save()
         messages.success(self.request, "Your request has been submitted")
         return super(RequestItemView, self).form_valid(form)
 
@@ -294,7 +311,7 @@ class ReturnItemView(TemplateView):
         return context
 
 
-class ProvisionItemView(CreateView):
+class ProvisionItemView(FormView):
     """View for provision item page"""
 
     template_name = 'provision_item.html'
@@ -302,7 +319,18 @@ class ProvisionItemView(CreateView):
     success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
-        """Pass message, send mail before saving new provision"""
+        """Save provision object in db, Pass message, send mail before saving new provision"""
+        form.instance.approved = True
+        form.instance.approved_on = timezone.now()
+        form.instance.return_by = timezone.now() + timedelta(days=7)
+        form.instance.quantity = 1
+
+        item = Item.objects.get(id=form.cleaned_data['item'].id)
+        item.quantity -= 1
+
+        form.instance.save()
+        item.save()
+
         item_name = form.cleaned_data['item'].name
         user_email = form.cleaned_data['user'].email
         messages.success(
@@ -326,11 +354,11 @@ class ProvisionItemView(CreateView):
         return super(ProvisionItemView, self).form_valid(form)
 
 
-class ProvisionItemByRequestView(UpdateView):
+class ProvisionByRequestView(UpdateView):
     """View for accepting provision request"""
 
     model = Provision
-    template_name = 'provision_item_request.html'
+    template_name = 'provision_by_request.html'
     form_class = ProvisionItemByRequestForm
     success_url = reverse_lazy('dashboard')
 
@@ -355,4 +383,4 @@ class ProvisionItemByRequestView(UpdateView):
             cc_to.append(str(user.email))
 
         EmailMessage(subject=subject, body=body, to=recipients, cc=cc_to).send()
-        return super(ProvisionItemByRequestView, self).form_valid(form)
+        return super(ProvisionByRequestView, self).form_valid(form)

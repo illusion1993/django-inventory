@@ -20,7 +20,7 @@
                 <td>{{ request.item.name }}</td>
                 <td>
                     {% if is_admin %}
-                        <a href="{% url 'provision_form' %}{{ request.id }}">Provision Item</a>
+                        <a href="{% url 'provision_item' %}{{ request.id }}">Provision Item</a>
                     {% else %}
                         {{ request.item.description|truncatechars:80 }}
                     {% endif %}
