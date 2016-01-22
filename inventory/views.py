@@ -28,6 +28,7 @@ from inventory.forms import (
     RequestItemForm,
     ProvisionItemForm,
     ProvisionItemByRequestForm)
+from inventory.message_constants import *
 
 
 def check_access(arg):
@@ -44,19 +45,19 @@ class LoginView(View):
     def get(self, request):
         """Get method for login page"""
         if request.user.is_authenticated():
-            messages.warning(request, 'You are already Logged In')
+            messages.warning(request, ALREADY_LOGGED_MESSAGE)
             return HttpResponseRedirect(reverse_lazy('dashboard'))
 
         else:
             if request.GET.get('next'):
-                messages.warning(request, 'You need to login First')
+                messages.warning(request, LOGIN_REQUIRED_MESSAGE)
 
             return TemplateResponse(request, 'login.html')
 
     def post(self, request):
         """Post method for login page"""
         if request.user.is_authenticated():
-            messages.warning(request, 'You are already Logged In')
+            messages.warning(request, ALREADY_LOGGED_MESSAGE)
             return HttpResponseRedirect(reverse_lazy('dashboard'))
 
         else:
@@ -66,14 +67,14 @@ class LoginView(View):
 
             if user:
                 auth.login(request, user)
-                messages.success(request, "You have been logged in")
+                messages.success(request, LOGIN_SUCCESS_MESSAGE)
                 print request.GET.get('next')
                 if request.GET.get('next'):
                     return HttpResponseRedirect(request.GET['next'])
                 else:
                     return HttpResponseRedirect(reverse_lazy('dashboard'))
             else:
-                messages.warning(request, "Please check your credentials")
+                messages.warning(request, LOGIN_INVALID_MESSAGE)
                 return TemplateResponse(
                     request, 'login.html', {'email': email})
 
@@ -82,13 +83,14 @@ class LogoutView(RedirectView):
     """View for logout"""
 
     url = reverse_lazy('login')
+    permanent = False
 
     def get(self, request, *args, **kwargs):
         """Processing get request to log a user out"""
         url = self.get_redirect_url(*args, **kwargs)
         if request.user.is_authenticated():
             auth.logout(request)
-            messages.success(request, "You have been logged out")
+            messages.success(request, LOGOUT_SUCCESS_MESSAGE)
         else:
             raise Http404()
 
@@ -180,18 +182,24 @@ class AddItemView(CreateView):
         """Save new item, pass message and send mail"""
         messages.success(
             self.request,
-            form.cleaned_data['name'] + " has been added to inventory"
+            item_added_message(form.cleaned_data['name'])
         )
-        subject = "Inventory Item Added"
-        body = form.cleaned_data['name'] + \
-            " has been added to the inventory. Quantity added is " + \
-            str(form.cleaned_data['quantity'])
+
+        new_mail = item_added_mail(
+            form.cleaned_data['name'],
+            form.cleaned_data['quantity']
+        )
         recipients = []
 
         for user in User.objects.all():
             recipients.append(str(user.email))
 
-        EmailMessage(subject=subject, body=body, to=recipients).send()
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients
+        ).send()
+
         return super(AddItemView, self).form_valid(form)
 
 
@@ -215,16 +223,22 @@ class EditItemView(UpdateView):
         """Update item in db, pass message and send mail"""
         messages.success(
             self.request,
-            form.instance.name + " has been updated successfully"
+            item_edited_message(form.instance.name)
         )
-        subject = "Inventory Item Updated"
-        body = "Inventory Item - " + form.instance.name + " has been updated."
+
+        new_mail = item_edited_mail(form.instance.name)
+
         recipients = []
 
         for user in User.objects.filter(is_admin=True):
             recipients.append(str(user.email))
 
-        EmailMessage(subject=subject, body=body, to=recipients).send()
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients
+        ).send()
+
         return super(EditItemView, self).form_valid(form)
 
 
@@ -239,7 +253,7 @@ class RequestItemView(FormView):
         """Save provision object, Pass message and save request"""
         form.instance.user = self.request.user
         form.instance.save()
-        messages.success(self.request, "Your request has been submitted")
+        messages.success(self.request, REQUEST_SUBMITTED_MESSAGE)
         return super(RequestItemView, self).form_valid(form)
 
 
@@ -280,15 +294,15 @@ class ReturnItemView(TemplateView):
         item.quantity += 1
         item.save()
 
-        subject = "Inventory Item Marked Returned"
-        body = "An inventory item has been returned by " + provision.user.email
+        new_mail = item_returned_mail(provision.user.email)
+
         recipients = [str(User.objects.get(id=provision.user.id).email)]
         cc_to = []
 
         for user in User.objects.filter(is_admin=True):
             cc_to.append(str(user.email))
 
-        EmailMessage(subject=subject, body=body, to=recipients, cc=cc_to).send()
+        EmailMessage(subject=new_mail['subject'], body=new_mail['body'], to=recipients, cc=cc_to).send()
         return context
 
 
@@ -316,14 +330,10 @@ class ProvisionItemView(FormView):
         user_email = form.cleaned_data['user'].email
         messages.success(
             self.request,
-            item_name + " provisioned to " + user_email
+            item_provision_message(item_name, user_email)
         )
 
-        subject = "Inventory Item Provisioned"
-        body = "An inventory item has been provisioned to a user. User - " \
-               + user_email \
-               + ", item - " \
-               + item_name
+        new_mail = item_provision_mail(item_name, user_email)
 
         recipients = [str(form.instance.user.email)]
         cc_to = []
@@ -331,7 +341,13 @@ class ProvisionItemView(FormView):
         for user in User.objects.filter(is_admin=True):
             cc_to.append(str(user.email))
 
-        EmailMessage(subject=subject, body=body, to=recipients, cc=cc_to).send()
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients,
+            cc=cc_to
+        ).send()
+
         return super(ProvisionItemView, self).form_valid(form)
 
 
@@ -345,17 +361,19 @@ class ProvisionByRequestView(UpdateView):
 
     def form_valid(self, form):
         """Pass message, send mail before updating provision model object"""
-        item_name = form.cleaned_data['item'].name
+        item = Item.objects.get(id=form.instance.item.id)
+        item_name = item.name
+
+        item.quantity -= 1
+        item.save()
+
         user_email = form.instance.user.email
         messages.success(
             self.request,
-            item_name + " provisioned to " + user_email
+            item_provision_message(item_name, user_email)
         )
-        subject = "Inventory Item Provisioned"
-        body = "An inventory item has been provisioned to a user. User - " \
-               + user_email \
-               + ", item - " \
-               + item_name
+
+        new_mail = item_provision_mail(item_name, user_email)
 
         recipients = [str(form.instance.user.email)]
         cc_to = []
@@ -363,5 +381,11 @@ class ProvisionByRequestView(UpdateView):
         for user in User.objects.filter(is_admin=True):
             cc_to.append(str(user.email))
 
-        EmailMessage(subject=subject, body=body, to=recipients, cc=cc_to).send()
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients,
+            cc=cc_to
+        ).send()
+
         return super(ProvisionByRequestView, self).form_valid(form)
