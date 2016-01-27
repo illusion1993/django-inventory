@@ -1,5 +1,6 @@
 """Inventory App Models"""
 import os
+import time
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -41,7 +42,13 @@ class UserManager(BaseUserManager):
 
 def get_image_path(instance, filename):
     """Generate a path for new image"""
-    return os.path.join('media', str(instance.email), filename)
+
+    # Save extension of image
+    extension = os.path.splitext(filename)[1]
+
+    # Generate filename and path
+    filename = str(int(round(time.time() * 1000))) + str(extension)
+    return os.path.join('media', filename)
 
 
 class User(AbstractBaseUser):
@@ -218,4 +225,5 @@ class Provision(models.Model):
 
     def get_absolute_url(self):
         """get absolute url for provision model object"""
+
         return reverse('provision_by_request', kwargs={'pk': self.id})

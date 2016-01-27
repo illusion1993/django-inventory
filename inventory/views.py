@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.contrib import auth, messages
 from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponseNotAllowed, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.utils import timezone
@@ -84,6 +84,7 @@ class LogoutView(RedirectView):
 
     url = reverse_lazy('login')
     permanent = False
+    http_method_names = ['get', ]
 
     def get(self, request, *args, **kwargs):
         """Processing get request to log a user out"""
@@ -361,6 +362,7 @@ class ProvisionByRequestView(UpdateView):
 
     def form_valid(self, form):
         """Pass message, send mail before updating provision model object"""
+        self.get_object()
         item = Item.objects.get(id=form.instance.item.id)
         item_name = item.name
 
