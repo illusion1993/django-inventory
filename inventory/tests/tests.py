@@ -4,6 +4,239 @@ from inventory.models import User, Item
 from inventory.message_constants import *
 
 
+class AnonymousTestCase(TestCase):
+    """
+    Test cases for an anonymous user
+    """
+
+    # Adding fixture for initial data
+    fixtures = ['data.json']
+
+    def test_home_view_get(self):
+        """
+        Testing home page for get request
+        """
+        resp = self.client.get(reverse_lazy('home'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_home_view_post(self):
+        """
+        Post request not allowed on home page
+        """
+        resp = self.client.post(reverse_lazy('home'))
+        self.assertEqual(resp.status_code, 405)
+
+    def test_login_view_get(self):
+        """
+        Anonymous user visits the login page
+        """
+        resp = self.client.get(reverse_lazy('login'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 200)
+
+    def test_login_view_success_post(self):
+        """
+        Testing successful login authentication and message passed
+        """
+        resp = self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'user@user.com',
+                'password': 'user'
+            },
+            follow=True
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_SUCCESS_MESSAGE)
+
+    def test_login_view_failure_post(self):
+        """
+        Authentication must fail for wrong credentials
+        """
+        resp = self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'test@test.com',
+                'password': 'test'
+            },
+            follow=True
+        )
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 200)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_INVALID_MESSAGE)
+
+    def test_logout_view_get(self):
+        """
+        Anonymous user must see 404 on logout page
+        """
+        resp = self.client.get(reverse_lazy('logout'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 404)
+
+    def test_dashboard_view_get(self):
+        """
+        Anonymous user must be redirected to login page from dashboard
+        """
+        resp = self.client.get(reverse_lazy('dashboard'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('dashboard'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_dashboard_view__post(self):
+        """
+        Post request on dashboard view without logging in
+        """
+        resp = self.client.post(reverse_lazy('dashboard'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+    def test_profile_view_get(self):
+        """
+        Anonymous user must be redirected to login page from profile view
+        """
+        resp = self.client.get(reverse_lazy('profile'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('profile'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_profile_view__post(self):
+        """
+        Anonymous user must be redirected to login page from profile view
+        """
+        resp = self.client.post(reverse_lazy('profile'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('profile'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_edit_profile_view_get(self):
+        """
+        Anonymous user must be redirected to login page from edit profile view
+        """
+        resp = self.client.get(reverse_lazy('edit_profile'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('edit_profile'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_edit_profile_view_post(self):
+        """
+        Anonymous user must be redirected to login page from edit profile view
+        """
+        resp = self.client.post(reverse_lazy('edit_profile'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('edit_profile'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_add_item_view_get(self):
+        """
+        Anonymous user must be redirected to login page from add item view
+        """
+        resp = self.client.get(reverse_lazy('add_item'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('add_item'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_add_item_view_post(self):
+        """
+        Anonymous user must be redirected to login page from add item view
+        """
+        resp = self.client.post(reverse_lazy('add_item'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('add_item'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_edit_item_list_view_get(self):
+        """
+        Anonymous user must be redirected to login page from edit item list view
+        """
+        resp = self.client.get(reverse_lazy('edit_item_list'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('edit_item_list'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+    def test_edit_item_list_view_post(self):
+        """
+        Anonymous user must be redirected to login page from add item view
+        """
+        resp = self.client.post(reverse_lazy('edit_item_list'))
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 302)
+
+        # Now checking by following redirect
+        resp = self.client.get(reverse_lazy('edit_item_list'), follow=True)
+
+        # Checking passed message
+        messages = list(resp.context['messages'])
+        self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
+
+
+
+
 class UserTestCase(TestCase):
     """
     Test cases for a logged in inventory user
