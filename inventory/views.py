@@ -360,9 +360,15 @@ class ProvisionByRequestView(UpdateView):
     form_class = ProvisionItemByRequestForm
     success_url = reverse_lazy('dashboard')
 
+    def get_object(self, queryset=None):
+        """Get provision object from the database, give 404 if not found"""
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        obj = get_object_or_404(Provision, id=pk, approved=False)
+
+        return obj
+
     def form_valid(self, form):
         """Pass message, send mail before updating provision model object"""
-        self.get_object()
         item = Item.objects.get(id=form.instance.item.id)
         item_name = item.name
 
