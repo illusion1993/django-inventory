@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 {% block title %}Inventory Management|Provisions List{% endblock %}
+
+{% url 'provision_item' as provision_item %}
+{% url 'provision_list' as provision_list %}
+
 {% block content %}
     <h1>All Provisions</h1>
     <table class="table-bordered table-striped">
@@ -15,9 +19,9 @@
             <td>{{ unit.item.name }}</td>
             <td>{{ unit.user.email }}</td>
             <td>{% if not unit.returned and not unit.approved %}
-                <a href="/items/provision/{{ unit.id }}">Approve Request</a>
+                <a href="{{ provision_item }}{{ unit.id }}">Approve Request</a>
             {% elif not unit.returned and unit.approved %}
-                <a href="/items/return/{{ unit.id }}">Mark returned</a>
+                <a href="{{ provision_list }}{{ unit.id }}">Mark returned</a>
             {% else %}
                 <span>--Item returned already--</span>
             {% endif %}</td>

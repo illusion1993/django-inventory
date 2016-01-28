@@ -68,7 +68,6 @@ class LoginView(View):
             if user:
                 auth.login(request, user)
                 messages.success(request, LOGIN_SUCCESS_MESSAGE)
-                print request.GET.get('next')
                 if request.GET.get('next'):
                     return HttpResponseRedirect(request.GET['next'])
                 else:

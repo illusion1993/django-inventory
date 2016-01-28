@@ -168,7 +168,7 @@ class Item(models.Model):
 class Provision(models.Model):
     """Model for provision/issues"""
 
-    item = models.ForeignKey(Item)  # add on_delete attribute
+    item = models.ForeignKey(Item)
     user = models.ForeignKey(User)
 
     timestamp = models.DateTimeField(
@@ -181,17 +181,14 @@ class Provision(models.Model):
 
     approved_on = models.DateTimeField(
         null=True,
-        blank=True
     )
 
     return_by = models.DateTimeField(
         null=True,
-        blank=True
     )
 
     quantity = models.IntegerField(
         null=True,
-        blank=True
     )
 
     returned = models.BooleanField(
@@ -200,7 +197,6 @@ class Provision(models.Model):
 
     returned_on = models.DateTimeField(
         null=True,
-        blank=True
     )
 
     # def __unicode__(self):
