@@ -4,9 +4,51 @@
 
 {% block content %}
 
-    <h1>Edit Profile</h1>
-    <form method="POST" class="item-form" enctype="multipart/form-data">{% csrf_token %}
-        {{ form.as_p }}
+    <form class="form-vertical" role="form" action="" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h3>Edit Profile</h3>
+            {{ form.non_field_errors }}
+
+            <div class="form-group">
+                {{ form.first_name.errors }}
+                <label for="{{ form.first_name.id_for_label }}">First Name:</label>
+                {{ form.first_name }}
+            </div>
+
+            <div class="form-group">
+                {{ form.last_name.errors }}
+                <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
+                {{ form.last_name }}
+            </div>
+
+            <div class="form-group">
+                {{ form.phone.errors }}
+                <label for="{{ form.phone.id_for_label }}">Phone:</label>
+                {{ form.phone }}
+            </div>
+
+            <div class="form-group">
+                {{ form.address.errors }}
+                <label for="{{ form.address.id_for_label }}">Address:</label>
+                {{ form.address }}
+            </div>
+
+            <div class="form-group">
+                {{ form.id_number.errors }}
+                <label for="{{ form.id_number.id_for_label }}">Id Number:</label>
+                {{ form.id_number }}
+            </div>
+
+            <div class="form-group">
+                {{ form.image.errors }}
+                <label for="{{ form.image.id_for_label }}">Image:</label>
+                {% if form.instance.image %}
+                <img src="{{ form.instance.image.url }}" alt=""/>
+                {% endif %}
+                <br/>
+                {{ form.image }}
+            </div>
+
         <button type="submit" class="save btn btn-default">Save</button>
         <a href="{% url 'profile' %}" class="btn btn-default">Cancel</a>
     </form>

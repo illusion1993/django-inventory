@@ -60,7 +60,7 @@ def get_image_path(instance, filename):
 
     # Generate filename and path
     filename = str(int(round(time.time() * 1000))) + str(extension)
-    return os.path.join('media', filename)
+    return os.path.join(filename)
 
 
 class User(AbstractBaseUser):
