@@ -175,26 +175,11 @@ class AddItemView(CreateView):
     success_url = reverse_lazy('items_list')
 
     def form_valid(self, form):
-        """Save new item, pass message and send mail"""
+        """Adding message when form is validated"""
         messages.success(
             self.request,
             item_added_message(form.cleaned_data['name'])
         )
-
-        new_mail = item_added_mail(
-            form.cleaned_data['name'],
-            form.cleaned_data['quantity']
-        )
-        recipients = []
-
-        for user in User.objects.all():
-            recipients.append(str(user.email))
-
-        EmailMessage(
-            subject=new_mail['subject'],
-            body=new_mail['body'],
-            to=recipients
-        ).send()
 
         return super(AddItemView, self).form_valid(form)
 
@@ -216,24 +201,11 @@ class EditItemView(UpdateView):
     success_url = reverse_lazy('edit_item_list')
 
     def form_valid(self, form):
-        """Update item in db, pass message and send mail"""
+        """Adding message when item is updated"""
         messages.success(
             self.request,
             item_edited_message(form.instance.name)
         )
-
-        new_mail = item_edited_mail(form.instance.name)
-
-        recipients = []
-
-        for user in User.objects.filter(is_admin=True):
-            recipients.append(str(user.email))
-
-        EmailMessage(
-            subject=new_mail['subject'],
-            body=new_mail['body'],
-            to=recipients
-        ).send()
 
         return super(EditItemView, self).form_valid(form)
 
@@ -248,7 +220,7 @@ class RequestItemView(FormView):
     def form_valid(self, form):
         """Save provision object, Pass message and save request"""
         form.instance.user = self.request.user
-        form.instance.save()
+        form.save()
         messages.success(self.request, REQUEST_SUBMITTED_MESSAGE)
         return super(RequestItemView, self).form_valid(form)
 

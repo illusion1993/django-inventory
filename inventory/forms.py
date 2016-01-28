@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
+from django.core.mail import EmailMessage
+from inventory.message_constants import item_added_mail, item_edited_mail
 
 from inventory.models import User, Item, Provision
 
@@ -56,6 +58,25 @@ class EditProfileForm(forms.ModelForm):
 class AddItemForm(forms.ModelForm):
     """Form to add item"""
 
+    def save(self, commit=True):
+        """Sending mail and saving new item"""
+        new_mail = item_added_mail(
+            self.cleaned_data['name'],
+            self.cleaned_data['quantity']
+        )
+        recipients = []
+
+        for user in User.objects.all():
+            recipients.append(str(user.email))
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients
+        ).send()
+
+        return super(AddItemForm, self).save(commit=True)
+
     def clean_quantity(self):
         quantity = self.cleaned_data['quantity']
 
@@ -79,6 +100,23 @@ class AddItemForm(forms.ModelForm):
 
 class EditItemForm(forms.ModelForm):
     """Form to create edit item"""
+
+    def save(self, commit=True):
+        """Sending email and saving the item"""
+        new_mail = item_edited_mail(self.instance.name)
+
+        recipients = []
+
+        for user in User.objects.filter(is_admin=True):
+            recipients.append(str(user.email))
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients
+        ).send()
+
+        return super(EditItemForm, self).save(commit=True)
 
     def clean_quantity(self):
         quantity = self.cleaned_data['quantity']

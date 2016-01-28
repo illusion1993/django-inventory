@@ -25,8 +25,6 @@ from inventory.decorators import (
     user_required,
 )
 
-admin.autodiscover()
-
 inventory_urlpatterns = patterns(
     '',
 
