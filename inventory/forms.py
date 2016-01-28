@@ -11,9 +11,6 @@ from inventory.models import User, Item, Provision
 class CustomUserCreationForm(UserCreationForm):
     """Form to create new user"""
 
-    def __init__(self, *args, **kwargs):
-        super(CustomUserCreationForm, self).__init__(*args, **kwargs)
-
     class Meta:
         """Meta Class"""
         model = User
@@ -25,13 +22,19 @@ class CustomUserCreationForm(UserCreationForm):
 class CustomUserChangeForm(UserChangeForm):
     """Form to edit a user from admin"""
 
-    def __init__(self, *args, **kwargs):
-        super(CustomUserChangeForm, self).__init__(*args, **kwargs)
-
     class Meta:
         """Meta Class"""
         model = User
-        exclude = ()
+        fields = (
+            'email',
+            'first_name',
+            'last_name',
+            'phone',
+            'address',
+            'id_number',
+            'is_admin',
+            'image',
+        )
 
 
 # Forms for inventory admins
@@ -41,14 +44,14 @@ class EditProfileForm(forms.ModelForm):
     class Meta:
         """Meta Class"""
         model = User
-        fields = [
+        fields = (
             'first_name',
             'last_name',
             'phone',
             'address',
             'id_number',
             'image'
-        ]
+        )
 
 
 class AddItemForm(forms.ModelForm):
