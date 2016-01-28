@@ -31,14 +31,6 @@ from inventory.forms import (
 from inventory.message_constants import *
 
 
-def check_access(arg):
-    """Function to check access level and raise 404"""
-    if arg:
-        return True
-    else:
-        raise Http404
-
-
 class LoginView(View):
     """View for login page"""
 
