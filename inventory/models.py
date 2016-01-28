@@ -8,6 +8,18 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 
+# REGEX used
+NAME_REGEX = RegexValidator(
+    regex=r'^[a-zA-Z]+$',
+    message="Please enter a valid name"
+)
+
+PHONE_REGEX = RegexValidator(
+    regex=r'^\d{10,10}$',
+    message="Please enter a valid phone number. Only 10 digits allowed."
+)
+
+
 class UserManager(BaseUserManager):
     """User Manager for custom User Model"""
 
@@ -57,54 +69,39 @@ class User(AbstractBaseUser):
     email = models.EmailField(
         'email address',
         unique=True,
-        null=False,
-        blank=False
-    )
-
-    regex = RegexValidator(
-        regex=r'^[a-zA-Z]+$',
-        message="Please enter a valid name"
     )
 
     first_name = models.CharField(
         max_length=50,
-        default=None,
         null=True,
-        validators=[regex]
+        validators=[NAME_REGEX]
     )
 
     last_name = models.CharField(
         max_length=50,
-        default=None,
         null=True,
-        validators=[regex]
-    )
-
-    regex = RegexValidator(
-        regex=r'^\d{10,10}$',
-        message="Please enter a valid phone number. Only 10 digits allowed."
+        validators=[NAME_REGEX]
     )
 
     phone = models.CharField(
-        validators=[regex],
+        validators=[PHONE_REGEX],
         max_length=15
     )
 
     address = models.TextField(
         null=True,
-        default=None
     )
 
     id_number = models.CharField(
         max_length=10,
         null=True,
-        default=None,
         unique=True
     )
 
     image = models.ImageField(
         upload_to=get_image_path,
-        blank=True, null=True
+        blank=True,
+        null=True
     )
 
     is_admin = models.BooleanField(
@@ -149,7 +146,6 @@ class Item(models.Model):
 
     name = models.CharField(
         max_length=50,
-        blank=False,
         unique=True
     )
 
@@ -158,23 +154,15 @@ class Item(models.Model):
         null=True
     )
 
-    returnable = models.BooleanField(
-        default=False
-    )
+    returnable = models.BooleanField()
 
     quantity = models.IntegerField(
         default=1,
-        blank=False,
-        null=False
     )
 
     def __unicode__(self):
         """unicode method"""
         return self.name
-
-    def get_absolute_url(self):
-        """get absolute url for model object"""
-        return reverse_lazy('items_list')
 
 
 class Provision(models.Model):
@@ -192,19 +180,16 @@ class Provision(models.Model):
     )
 
     approved_on = models.DateTimeField(
-        default=None,
         null=True,
         blank=True
     )
 
     return_by = models.DateTimeField(
-        default=None,
         null=True,
         blank=True
     )
 
     quantity = models.IntegerField(
-        default=None,
         null=True,
         blank=True
     )
@@ -214,16 +199,10 @@ class Provision(models.Model):
     )
 
     returned_on = models.DateTimeField(
-        default=None,
         null=True,
         blank=True
     )
 
-    def __unicode__(self):
-        """unicode method"""
-        return self.user.email
-
-    def get_absolute_url(self):
-        """get absolute url for provision model object"""
-
-        return reverse('provision_by_request', kwargs={'pk': self.id})
+    # def __unicode__(self):
+    #     """unicode method"""
+    #     return self.user.email

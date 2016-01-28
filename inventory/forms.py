@@ -1,9 +1,8 @@
 """Inventory App Forms"""
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
-from django.utils import timezone
 
 from inventory.models import User, Item, Provision
 
@@ -131,8 +130,8 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         """Save method marks a provision request approved, adds other info"""
         ins = super(ProvisionItemByRequestForm, self).save(commit=False)
         ins.approved = True
-        ins.approved_on = timezone.now()
-        ins.return_by = timezone.now() + timedelta(days=7)
+        ins.approved_on = datetime.now()
+        ins.return_by = datetime.now() + timedelta(days=7)
         ins.quantity = 1
 
         if commit:
