@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.contrib import auth, messages
 from django.core.mail import EmailMessage
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.http import HttpResponseRedirect, Http404, HttpResponseNotAllowed, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -140,18 +140,22 @@ class ProfileView(DetailView):
         return obj
 
 
-class EditProfileView(UpdateView):
+class EditProfileView(FormView):
     """View for profile update page"""
 
-    model = User
-    form_class = EditProfileForm
     template_name = 'edit_profile.html'
+    form_class = EditProfileForm
     success_url = reverse_lazy('profile')
 
-    def get_object(self, queryset=None):
-        """Fetching user profile for editing"""
-        obj = User.objects.get(id=self.request.user.id)
-        return obj
+    def get_form(self, form_class):
+        """Load the form with the instance of user model object"""
+        ins = User.objects.get(id=self.request.user.id)
+        return form_class(instance=ins, **self.get_form_kwargs())
+
+    def form_valid(self, form):
+        """If the form is valid, save the object in db"""
+        form.save()
+        return super(EditProfileView, self).form_valid(form)
 
 
 class ItemsListView(ListView):
