@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
 from django.core.mail import EmailMessage
-from inventory.message_constants import item_added_mail, item_edited_mail
+from inventory.message_constants import *
 
 from inventory.models import User, Item, Provision
 
@@ -147,6 +147,35 @@ class ProvisionItemForm(forms.ModelForm):
         self.fields['user'].queryset = self.fields[
             'user'].queryset.exclude(is_admin=True)
 
+    def save(self, commit=True):
+        """Send mail and save new provision object"""
+        self.instance.approved = True
+        self.instance.approved_on = datetime.now()
+        self.instance.return_by = datetime.now() + timedelta(days=7)
+        self.instance.quantity = 1
+
+        # Decrementing item quantity
+        item = Item.objects.get(id=self.instance.item.id)
+        item.quantity -= self.instance.quantity
+        item.save()
+
+        # Sending mail
+        new_mail = item_provision_mail(self.instance.item.name, self.instance.user.email)
+        recipients = [str(self.instance.user.email)]
+        cc_to = []
+
+        for user in User.objects.filter(is_admin=True):
+            cc_to.append(str(user.email))
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients,
+            cc=cc_to
+        ).send()
+
+        return super(ProvisionItemForm, self).save(commit=True)
+
     class Meta:
         """Meta Class"""
         model = Provision
@@ -166,16 +195,34 @@ class ProvisionItemByRequestForm(forms.ModelForm):
 
     def save(self, commit=True):
         """Save method marks a provision request approved, adds other info"""
-        ins = super(ProvisionItemByRequestForm, self).save(commit=False)
-        ins.approved = True
-        ins.approved_on = datetime.now()
-        ins.return_by = datetime.now() + timedelta(days=7)
-        ins.quantity = 1
+        self.instance.approved = True
+        self.instance.approved_on = datetime.now()
+        self.instance.return_by = datetime.now() + timedelta(days=7)
+        self.instance.quantity = 1
 
-        if commit:
-            ins.save()
+        # Decrementing item quantity
+        item = Item.objects.get(id=self.instance.item.id)
+        item_name = item.name
+        item.quantity -= self.instance.quantity
+        item.save()
 
-        return ins
+        # Sending email
+        user_email = self.instance.user.email
+        new_mail = item_provision_mail(item_name, user_email)
+        recipients = [str(self.instance.user.email)]
+        cc_to = []
+
+        for user in User.objects.filter(is_admin=True):
+            cc_to.append(str(user.email))
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients,
+            cc=cc_to
+        ).send()
+
+        return super(ProvisionItemByRequestForm, self).save(commit=True)
 
     class Meta:
         """Meta Class"""
@@ -199,3 +246,31 @@ class RequestItemForm(forms.ModelForm):
         fields = (
             'item',
         )
+
+
+class ReturnItemForm(forms.ModelForm):
+    """Form to return an item"""
+
+    def save(self, commit=True):
+        """Marking as returned, incrementing item quantity, sending mail"""
+        self.instance.returned = True
+        self.instance.returned_on = datetime.now()
+        item = Item.objects.get(id=self.instance.item.id)
+        item.quantity += self.instance.quantity
+        item.save()
+
+        # Sending mail now
+        new_mail = item_returned_mail(self.instance.user.email)
+        recipients = [str(User.objects.get(id=self.instance.user.id).email)]
+        cc_to = []
+        for user in User.objects.filter(is_admin=True):
+            cc_to.append(str(user.email))
+
+        EmailMessage(subject=new_mail['subject'], body=new_mail['body'], to=recipients, cc=cc_to).send()
+        return super(ReturnItemForm, self).save(commit=True)
+
+
+    class Meta:
+        """Meta Class"""
+        model = Provision
+        fields = ()

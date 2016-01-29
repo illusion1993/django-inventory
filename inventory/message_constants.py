@@ -6,6 +6,7 @@ LOGIN_SUCCESS_MESSAGE = 'You have been logged in'
 LOGIN_INVALID_MESSAGE = 'Please check your credentials'
 LOGOUT_SUCCESS_MESSAGE = 'You have been logged out'
 REQUEST_SUBMITTED_MESSAGE = 'Your request has been submitted'
+ITEM_RETURNED_MESSAGE = 'The item has been marked returned'
 
 
 def item_added_message(item_name):
