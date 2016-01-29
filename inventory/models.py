@@ -3,7 +3,6 @@ import os
 import time
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.validators import RegexValidator
 from django.db import models
 

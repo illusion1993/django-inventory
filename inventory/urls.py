@@ -1,6 +1,5 @@
 """Inventory App URLs"""
 from django.conf.urls import patterns, url
-from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
@@ -25,7 +24,7 @@ from inventory.decorators import (
     user_required,
 )
 
-inventory_urlpatterns = patterns(
+urlpatterns = patterns(
     '',
 
     # urls available to both users and admins
