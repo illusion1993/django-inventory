@@ -64,10 +64,7 @@ class AddItemForm(forms.ModelForm):
             self.cleaned_data['name'],
             self.cleaned_data['quantity']
         )
-        recipients = []
-
-        for user in User.objects.all():
-            recipients.append(str(user.email))
+        recipients = [str(user.email) for user in User.objects.all()]
 
         EmailMessage(
             subject=new_mail['subject'],
@@ -105,10 +102,7 @@ class EditItemForm(forms.ModelForm):
         """Sending email and saving the item"""
         new_mail = item_edited_mail(self.instance.name)
 
-        recipients = []
-
-        for user in User.objects.filter(is_admin=True):
-            recipients.append(str(user.email))
+        recipients = [str(user.email) for user in User.objects.filter(is_admin=True)]
 
         EmailMessage(
             subject=new_mail['subject'],
@@ -162,10 +156,7 @@ class ProvisionItemForm(forms.ModelForm):
         # Sending mail
         new_mail = item_provision_mail(self.instance.item.name, self.instance.user.email)
         recipients = [str(self.instance.user.email)]
-        cc_to = []
-
-        for user in User.objects.filter(is_admin=True):
-            cc_to.append(str(user.email))
+        cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
 
         EmailMessage(
             subject=new_mail['subject'],
@@ -210,10 +201,7 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         user_email = self.instance.user.email
         new_mail = item_provision_mail(item_name, user_email)
         recipients = [str(self.instance.user.email)]
-        cc_to = []
-
-        for user in User.objects.filter(is_admin=True):
-            cc_to.append(str(user.email))
+        cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
 
         EmailMessage(
             subject=new_mail['subject'],
@@ -262,9 +250,7 @@ class ReturnItemForm(forms.ModelForm):
         # Sending mail now
         new_mail = item_returned_mail(self.instance.user.email)
         recipients = [str(User.objects.get(id=self.instance.user.id).email)]
-        cc_to = []
-        for user in User.objects.filter(is_admin=True):
-            cc_to.append(str(user.email))
+        cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
 
         EmailMessage(subject=new_mail['subject'], body=new_mail['body'], to=recipients, cc=cc_to).send()
         return super(ReturnItemForm, self).save(commit=True)
