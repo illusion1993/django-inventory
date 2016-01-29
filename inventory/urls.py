@@ -93,7 +93,7 @@ inventory_urlpatterns = patterns(
         name='edit_item_list'
     ),
     url(
-        r'^items/edit/(?P<pk>[0-9]+)/$',
+        r'^items/edit/(?P<pk>[\d]+)/$',
         admin_required(
             EditItemView.as_view()
         ),
@@ -107,7 +107,7 @@ inventory_urlpatterns = patterns(
         name='provision_list'
     ),
     url(
-        r'^items/return/(?P<pk>[0-9]+)/$',
+        r'^items/return/(?P<pk>[\d]+)/$',
         admin_required(
             ReturnItemView.as_view()
         ),
@@ -121,7 +121,7 @@ inventory_urlpatterns = patterns(
         name='provision_item'
     ),
     url(
-        r'^items/provision/(?P<pk>[0-9]+)/$',
+        r'^items/provision/(?P<pk>[\d]+)/$',
         admin_required(
             ProvisionByRequestView.as_view()
         ),

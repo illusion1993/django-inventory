@@ -19,9 +19,9 @@
             <td>{{ unit.item.name }}</td>
             <td>{{ unit.user.email }}</td>
             <td>{% if not unit.returned and not unit.approved %}
-                <a href="{% url 'provision_item' %}{{ unit.id }}">Approve Request</a>
+                <a href="{% url 'provision_by_request' unit.id %}">Approve Request</a>
             {% elif not unit.returned and unit.approved %}
-                <a href="{% url 'provision_list' %}{{ unit.id }}">Mark returned</a>
+                <a href="{% url 'return_item' unit.id %}">Mark returned</a>
             {% else %}
                 <span>--Item returned already--</span>
             {% endif %}</td>

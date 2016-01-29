@@ -20,7 +20,7 @@
                 <td>{{ req.item.name }}</td>
                 <td>
                     {% if is_admin %}
-                        <a href="{% url 'provision_item' %}{{ req.id }}">Provision Item</a>
+                        <a href="{% url 'provision_by_request' req.id %}">Provision Item</a>
                     {% else %}
                         {{ req.item.description|truncatechars:80 }}
                     {% endif %}
@@ -72,7 +72,7 @@
                 <td>{% if req.item.returnable and req.item.returned %}
                         Returned
                     {% elif req.item.returnable and not req.item.returned %}
-                        <a href="{% url 'provision_list' %}{{ req.id }}">Mark Returned</a>
+                        <a href="{% url 'return_item' req.id %}">Mark Returned</a>
                     {% else %}
                         N/A
                     {% endif %}</td>

@@ -169,7 +169,7 @@ class AddItemView(CreateView):
     model = Item
     form_class = AddItemForm
     template_name = 'add_item.html'
-    success_url = reverse_lazy('items_list')
+    success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
         """Adding message when form is validated"""
@@ -195,7 +195,7 @@ class EditItemView(UpdateView):
     model = Item
     template_name = 'edit_item.html'
     form_class = EditItemForm
-    success_url = reverse_lazy('edit_item_list')
+    success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
         """Adding message when item is updated"""
@@ -240,7 +240,7 @@ class ReturnItemView(UpdateView):
     model = Provision
     form_class = ReturnItemForm
     template_name = 'return_item.html'
-    success_url = reverse_lazy('provision_list')
+    success_url = reverse_lazy('dashboard')
 
     def get_object(self, queryset=None):
         """Get provision object from the database, give 404 if not found"""
