@@ -52,11 +52,16 @@ class LoginView(View):
         else:
             email = request.POST['email']
             password = request.POST['password']
+            remember = request.POST['remember']
             user = auth.authenticate(email=email, password=password)
 
             if user:
                 auth.login(request, user)
                 messages.success(request, LOGIN_SUCCESS_MESSAGE)
+
+                if not remember:
+                    self.request.session.set_expiry(0)
+
                 if request.GET.get('next'):
                     return HttpResponseRedirect(request.GET['next'])
                 else:
@@ -129,7 +134,6 @@ class ProfileView(DetailView):
 
     model = User
     template_name = 'profile.html'
-    context_object_name = 'user'
 
     def get_object(self, queryset=None):
         """Fetching user profile for viewing"""
