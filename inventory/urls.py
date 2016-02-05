@@ -1,6 +1,5 @@
 """Inventory App URLs"""
 from django.conf.urls import patterns, url
-from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
@@ -25,9 +24,7 @@ from inventory.decorators import (
     user_required,
 )
 
-admin.autodiscover()
-
-inventory_urlpatterns = patterns(
+urlpatterns = patterns(
     '',
 
     # urls available to both users and admins
@@ -95,7 +92,7 @@ inventory_urlpatterns = patterns(
         name='edit_item_list'
     ),
     url(
-        r'^items/edit/(?P<pk>[0-9]+)/$',
+        r'^items/edit/(?P<pk>[\d]+)/$',
         admin_required(
             EditItemView.as_view()
         ),
@@ -109,7 +106,7 @@ inventory_urlpatterns = patterns(
         name='provision_list'
     ),
     url(
-        r'^items/return/(?P<pk>[0-9]+)/$',
+        r'^items/return/(?P<pk>[\d]+)/$',
         admin_required(
             ReturnItemView.as_view()
         ),
@@ -123,7 +120,7 @@ inventory_urlpatterns = patterns(
         name='provision_item'
     ),
     url(
-        r'^items/provision/(?P<pk>[0-9]+)/$',
+        r'^items/provision/(?P<pk>[\d]+)/$',
         admin_required(
             ProvisionByRequestView.as_view()
         ),

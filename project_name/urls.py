@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.conf.urls import patterns, include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-from inventory.urls import inventory_urlpatterns
 
 from project_name.settings import MEDIA_ROOT, MEDIA_URL
 
@@ -16,9 +15,11 @@ urlpatterns = patterns('',
         r'^admin/',
         include(admin.site.urls)
     ),
+    url(
+        r'^',
+        include('inventory.urls')
+    ),
 )
 
-
-urlpatterns += inventory_urlpatterns
 urlpatterns += staticfiles_urlpatterns()
 urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)

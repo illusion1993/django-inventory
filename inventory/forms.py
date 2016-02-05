@@ -1,18 +1,16 @@
 """Inventory App Forms"""
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
-from django.utils import timezone
+from django.core.mail import EmailMessage
+from inventory.message_constants import *
 
 from inventory.models import User, Item, Provision
 
 # Forms for admin panel
 class CustomUserCreationForm(UserCreationForm):
     """Form to create new user"""
-
-    def __init__(self, *args, **kwargs):
-        super(CustomUserCreationForm, self).__init__(*args, **kwargs)
 
     class Meta:
         """Meta Class"""
@@ -25,13 +23,19 @@ class CustomUserCreationForm(UserCreationForm):
 class CustomUserChangeForm(UserChangeForm):
     """Form to edit a user from admin"""
 
-    def __init__(self, *args, **kwargs):
-        super(CustomUserChangeForm, self).__init__(*args, **kwargs)
-
     class Meta:
         """Meta Class"""
         model = User
-        exclude = ()
+        fields = (
+            'email',
+            'first_name',
+            'last_name',
+            'phone',
+            'address',
+            'id_number',
+            'is_admin',
+            'image',
+        )
 
 
 # Forms for inventory admins
@@ -41,18 +45,34 @@ class EditProfileForm(forms.ModelForm):
     class Meta:
         """Meta Class"""
         model = User
-        fields = [
+        fields = (
             'first_name',
             'last_name',
             'phone',
             'address',
             'id_number',
             'image'
-        ]
+        )
 
 
 class AddItemForm(forms.ModelForm):
     """Form to add item"""
+
+    def save(self, commit=True):
+        """Sending mail and saving new item"""
+        new_mail = item_added_mail(
+            self.cleaned_data['name'],
+            self.cleaned_data['quantity']
+        )
+        recipients = [str(user.email) for user in User.objects.all()]
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients
+        ).send()
+
+        return super(AddItemForm, self).save(commit=True)
 
     def clean_quantity(self):
         quantity = self.cleaned_data['quantity']
@@ -77,6 +97,20 @@ class AddItemForm(forms.ModelForm):
 
 class EditItemForm(forms.ModelForm):
     """Form to create edit item"""
+
+    def save(self, commit=True):
+        """Sending email and saving the item"""
+        new_mail = item_edited_mail(self.instance.name)
+
+        recipients = [str(user.email) for user in User.objects.filter(is_admin=True)]
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients
+        ).send()
+
+        return super(EditItemForm, self).save(commit=True)
 
     def clean_quantity(self):
         quantity = self.cleaned_data['quantity']
@@ -107,6 +141,32 @@ class ProvisionItemForm(forms.ModelForm):
         self.fields['user'].queryset = self.fields[
             'user'].queryset.exclude(is_admin=True)
 
+    def save(self, commit=True):
+        """Send mail and save new provision object"""
+        self.instance.approved = True
+        self.instance.approved_on = datetime.now()
+        self.instance.return_by = datetime.now() + timedelta(days=7)
+        self.instance.quantity = 1
+
+        # Decrementing item quantity
+        item = Item.objects.get(id=self.instance.item.id)
+        item.quantity -= self.instance.quantity
+        item.save()
+
+        # Sending mail
+        new_mail = item_provision_mail(self.instance.item.name, self.instance.user.email)
+        recipients = [str(self.instance.user.email)]
+        cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients,
+            cc=cc_to
+        ).send()
+
+        return super(ProvisionItemForm, self).save(commit=True)
+
     class Meta:
         """Meta Class"""
         model = Provision
@@ -126,16 +186,31 @@ class ProvisionItemByRequestForm(forms.ModelForm):
 
     def save(self, commit=True):
         """Save method marks a provision request approved, adds other info"""
-        ins = super(ProvisionItemByRequestForm, self).save(commit=False)
-        ins.approved = True
-        ins.approved_on = timezone.now()
-        ins.return_by = timezone.now() + timedelta(days=7)
-        ins.quantity = 1
+        self.instance.approved = True
+        self.instance.approved_on = datetime.now()
+        self.instance.return_by = datetime.now() + timedelta(days=7)
+        self.instance.quantity = 1
 
-        if commit:
-            ins.save()
+        # Decrementing item quantity
+        item = Item.objects.get(id=self.instance.item.id)
+        item_name = item.name
+        item.quantity -= self.instance.quantity
+        item.save()
 
-        return ins
+        # Sending email
+        user_email = self.instance.user.email
+        new_mail = item_provision_mail(item_name, user_email)
+        recipients = [str(self.instance.user.email)]
+        cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
+
+        EmailMessage(
+            subject=new_mail['subject'],
+            body=new_mail['body'],
+            to=recipients,
+            cc=cc_to
+        ).send()
+
+        return super(ProvisionItemByRequestForm, self).save(commit=True)
 
     class Meta:
         """Meta Class"""
@@ -159,3 +234,29 @@ class RequestItemForm(forms.ModelForm):
         fields = (
             'item',
         )
+
+
+class ReturnItemForm(forms.ModelForm):
+    """Form to return an item"""
+
+    def save(self, commit=True):
+        """Marking as returned, incrementing item quantity, sending mail"""
+        self.instance.returned = True
+        self.instance.returned_on = datetime.now()
+        item = Item.objects.get(id=self.instance.item.id)
+        item.quantity += self.instance.quantity
+        item.save()
+
+        # Sending mail now
+        new_mail = item_returned_mail(self.instance.user.email)
+        recipients = [str(User.objects.get(id=self.instance.user.id).email)]
+        cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
+
+        EmailMessage(subject=new_mail['subject'], body=new_mail['body'], to=recipients, cc=cc_to).send()
+        return super(ReturnItemForm, self).save(commit=True)
+
+
+    class Meta:
+        """Meta Class"""
+        model = Provision
+        fields = ()

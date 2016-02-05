@@ -8,7 +8,10 @@ PASSWORD_HASHERS = (
 
 DEBUG = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST_USER = 'django.inventory@gmail.com'
+EMAIL_HOST_PASSWORD = 'inventoryjtg'
+DEFAULT_FROM_EMAIL = 'Django Inventory App <django.inventory@gmail.com>'
 
 COMPRESS_ENABLED = False
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media-test/')

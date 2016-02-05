@@ -199,13 +199,14 @@ CACHES = {
 
 
 ########## EMAIL CONFIGURATION
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'django.inventory@gmail.com'
-EMAIL_HOST_PASSWORD = 'inventoryjtg'
-DEFAULT_FROM_EMAIL = 'Django Inventory App <django.inventory@gmail.com>'
+EMAIL_HOST_USER = 'your_email@example.com'
+EMAIL_HOST_PASSWORD = ''
+DEFAULT_FROM_EMAIL = 'webmaster.default@example.com'
 
 EMAIL_USE_TLS = True
 ########## END EMAIL CONFIGURATION
