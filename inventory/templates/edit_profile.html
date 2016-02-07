@@ -4,52 +4,70 @@
 
 {% block content %}
 
-    <form class="form-vertical" role="form" action="" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <h3>Edit Profile</h3>
-            {{ form.non_field_errors }}
+    <div class="row">
+        <div class="col-md-6">
+            <form class="form-vertical" role="form" action="" method="post" enctype="multipart/form-data" id="profile_update_form">
+                {% csrf_token %}
+                <h3>Edit Profile</h3>
+                    {{ form.non_field_errors }}
 
-            <div class="form-group">
-                {{ form.first_name.errors }}
-                <label for="{{ form.first_name.id_for_label }}">First Name:</label>
-                {{ form.first_name }}
-            </div>
+                    <div class="form-group">
+                        {{ form.first_name.errors }}
+                        <label for="{{ form.first_name.id_for_label }}">First Name:</label>
+                        {{ form.first_name }}
+                    </div>
 
-            <div class="form-group">
-                {{ form.last_name.errors }}
-                <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
-                {{ form.last_name }}
-            </div>
+                    <div class="form-group">
+                        {{ form.last_name.errors }}
+                        <label for="{{ form.last_name.id_for_label }}">Last Name:</label>
+                        {{ form.last_name }}
+                    </div>
 
-            <div class="form-group">
-                {{ form.phone.errors }}
-                <label for="{{ form.phone.id_for_label }}">Phone:</label>
-                {{ form.phone }}
-            </div>
+                    <div class="form-group">
+                        {{ form.phone.errors }}
+                        <label for="{{ form.phone.id_for_label }}">Phone:</label>
+                        {{ form.phone }}
+                    </div>
 
-            <div class="form-group">
-                {{ form.address.errors }}
-                <label for="{{ form.address.id_for_label }}">Address:</label>
-                {{ form.address }}
-            </div>
+                    <div class="form-group">
+                        {{ form.address.errors }}
+                        <label for="{{ form.address.id_for_label }}">Address:</label>
+                        {{ form.address }}
+                    </div>
 
-            <div class="form-group">
-                {{ form.id_number.errors }}
-                <label for="{{ form.id_number.id_for_label }}">Id Number:</label>
-                {{ form.id_number }}
-            </div>
+                    <div class="form-group">
+                        {{ form.id_number.errors }}
+                        <label for="{{ form.id_number.id_for_label }}">Id Number:</label>
+                        {{ form.id_number }}
+                    </div>
 
-            <div class="form-group">
-                {{ form.image.errors }}
-                <label for="{{ form.image.id_for_label }}">Image:</label>
-                {% if form.instance.image %}
-                <img src="{{ form.instance.image.url }}" alt=""/>
-                {% endif %}
-                <br/>
-                {{ form.image }}
-            </div>
+                    <div class="form-group" action="{% url 'image_upload_ajax' %}">
+                        <label for="image">Image:</label>
+                        <img id="profile_image" src="{% if form.instance.image %}{{ form.instance.image.url }}{% endif %}" alt=""/>
+                        <br/>
+                        <a href="#" id="image_clear">Clear</a>
+                        <br/>
+                        Change:
+                        <input id="image" name="image" type="file">
+                    </div>
 
-        <button type="submit" class="save btn btn-default">Save</button>
-        <a href="{% url 'profile' %}" class="btn btn-default">Cancel</a>
-    </form>
+                <button type="submit" class="save btn btn-default">Save</button>
+                <a href="{% url 'profile' %}" class="btn btn-default">Cancel</a>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <form class="form-vertical" role="form" action="" method="post">
+                <h3>Change Password</h3>
+                {% csrf_token %}
+                {{ form2.as_p }}
+                <button type="submit" class="save btn btn-default" name="change_password" value="True">Change</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Javascript variables
+        var csrf = '{{ csrf_token }}';
+    </script>
+
+
 {% endblock %}

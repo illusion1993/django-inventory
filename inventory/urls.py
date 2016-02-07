@@ -17,12 +17,14 @@ from inventory.views import (
     ReturnItemView,
     ProvisionItemView,
     ProvisionByRequestView,
-    EditItemListView
-)
+    EditItemListView,
+    PasswordChangeView, LoadMoreView, ImageUploadView, ImageTestView, SwitchRoleView, UserAutocompleteView,
+    ItemAutocompleteView, ReportView, ReportAjaxView)
 from inventory.decorators import (
     admin_required,
     user_required,
 )
+
 
 urlpatterns = patterns(
     '',
@@ -126,6 +128,20 @@ urlpatterns = patterns(
         ),
         name='provision_by_request'
     ),
+    url(
+        r'^report/$',
+        admin_required(
+            ReportView.as_view()
+        ),
+        name='report'
+    ),
+    url(
+        r'^report/ajax/$',
+        admin_required(
+            ReportAjaxView.as_view()
+        ),
+        name='report_ajax'
+    ),
 
     # urls for user only
     url(
@@ -134,5 +150,50 @@ urlpatterns = patterns(
             RequestItemView.as_view()
         ),
         name='request_item'
+    ),
+
+
+    url(
+        r'^ajax/load_more/$',
+        login_required(
+            LoadMoreView.as_view(),
+            login_url='login'
+        ),
+        name="load_more_ajax"
+    ),
+    url(
+        r'^ajax/upload_image/$',
+        login_required(
+            ImageUploadView.as_view(),
+            login_url='login'
+        ),
+        name="image_upload_ajax"
+    ),
+    url(
+        r'^ajax/user_autocomplete/$',
+        admin_required(
+            UserAutocompleteView.as_view(),
+        ),
+        name="user_autocomplete_ajax"
+    ),
+    url(
+        r'^ajax/item_autocomplete/$',
+        admin_required(
+            ItemAutocompleteView.as_view(),
+        ),
+        name="item_autocomplete_ajax"
+    ),
+    url(
+        r'^image/$',
+        login_required(
+            ImageTestView.as_view(),
+            login_url='login'
+        ),
+        name="image_test"
+    ),
+    url(
+        r'^dashboard/switch$',
+        SwitchRoleView.as_view(),
+        name="switch_role"
     ),
 )

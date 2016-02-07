@@ -1,8 +1,14 @@
 """Inventory app views"""
+from datetime import datetime
+import os
+import tempfile
 
 from django.contrib import auth, messages
+from django.contrib.auth.forms import PasswordChangeForm
+from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponseRedirect, Http404
+from django.forms import formset_factory
+from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.views.generic import (
@@ -24,8 +30,11 @@ from inventory.forms import (
     EditItemForm,
     RequestItemForm,
     ProvisionItemForm,
-    ProvisionItemByRequestForm, ReturnItemForm)
+    ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm, DateFilterForm)
 from inventory.message_constants import *
+
+from dal import autocomplete
+from inventory.signals import send_mail_signal
 
 
 class LoginView(View):
@@ -52,7 +61,7 @@ class LoginView(View):
         else:
             email = request.POST['email']
             password = request.POST['password']
-            remember = request.POST['remember']
+            remember = request.POST.get('remember', False)
             user = auth.authenticate(email=email, password=password)
 
             if user:
@@ -108,7 +117,10 @@ class DashboardView(TemplateView):
         }
 
         if is_admin:
-            pending = provisions.filter(approved=False).order_by('timestamp')
+            pending = provisions.filter(
+                approved=False,
+            ).order_by('timestamp')
+
             approved = provisions.filter(
                 approved=True,
                 returned=False
@@ -124,8 +136,24 @@ class DashboardView(TemplateView):
                 approved=True
             ).order_by('-timestamp')
 
+        if pending.count() > 5:
+            pending_more = True
+        else:
+            pending_more = False
+
+        if approved.count() > 5:
+            approved_more = True
+        else:
+            approved_more = False
+
+        pending = pending[:5]
+        approved = approved[:5]
+
         context['pending'] = pending
         context['approved'] = approved
+        context['pending_more'] = pending_more
+        context['approved_more'] = approved_more
+
         return context
 
 
@@ -157,6 +185,61 @@ class EditProfileView(FormView):
         """If the form is valid, save the object in db"""
         form.save()
         return super(EditProfileView, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Save both the forms in context"""
+        if 'form2' not in kwargs:
+            kwargs['form2'] = PasswordChangeForm(user=self.request.user)
+            return super(EditProfileView, self).get_context_data(**kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """Checking if password form is submitted"""
+        password_form_submitted = request.POST.get('change_password', False)
+
+        if password_form_submitted:
+            """Process the password form"""
+            form2_kwargs = {
+                'data': request.POST,
+            }
+
+            form = self.form_class(instance=request.user)
+            form2 = PasswordChangeForm(request.user, **form2_kwargs)
+
+            if form2.is_valid():
+                # Passing message
+                messages.success(
+                    request,
+                    PASSWORD_CHANGE_SUCCESS_MESSAGE
+                )
+
+                # Going to success url
+                return self.form_valid(form2)
+
+        else:
+            """Process the profile update form"""
+            form = self.get_form()
+            form2 = PasswordChangeForm(user=self.request.user)
+
+            if form.is_valid():
+                # Passing message
+                if form.has_changed():
+                    messages.success(
+                        request,
+                        PROFILE_UPDATE_SUCCESS_MESSAGE
+                    )
+
+                # Going to success url
+                return self.form_valid(form)
+
+            else:
+                return self.form_invalid(form)
+
+        context = {
+            'form': form,
+            'form2': form2
+        }
+
+        return self.render_to_response(context)
 
 
 class ItemsListView(ListView):
@@ -254,7 +337,7 @@ class ReturnItemView(UpdateView):
             id=pk,
             approved=True,
             returned=False,
-            )
+        )
 
         return obj
 
@@ -275,20 +358,53 @@ class ProvisionItemView(FormView):
     """View for provision item page"""
 
     template_name = 'provision_item.html'
-    form_class = ProvisionItemForm
+    # form_class = formset_factory(ProvisionItemForm)
+    # form_class = ProvisionItemForm
     success_url = reverse_lazy('dashboard')
 
-    def form_valid(self, form):
-        """Give success message when form is validated"""
+    # def get_context_data(self, **kwargs):
+    #     """
+    #     Insert the form into the context dict.
+    #     """
+    #     if 'formset' not in kwargs:
+    #         kwargs['formset'] = formset_factory(ProvisionItemForm)
+    #         return kwargs
 
-        item_name = form.instance.item.name
-        user_email = form.instance.user.email
+    def form_valid(self, formset):
+        """
+        If the form is valid, redirect to the supplied URL.
+        """
+
+        for form in formset:
+            form.save()
+
         messages.success(
             self.request,
-            item_provision_message(item_name, user_email)
+            'Items provisioned successfully'
         )
 
-        return super(ProvisionItemView, self).form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, formset):
+        context = {
+            'formset': formset
+        }
+        return self.render_to_response(context)
+
+    def get(self, request, *args, **kwargs):
+        context = {
+            'formset': formset_factory(ProvisionItemForm, extra=1)
+        }
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        ProvisionFormset = formset_factory(ProvisionItemForm)
+        formset = ProvisionFormset(request.POST, request.FILES)
+
+        if formset.is_valid():
+            return self.form_valid(formset)
+        else:
+            return self.form_invalid(formset)
 
 
 class ProvisionByRequestView(UpdateView):
@@ -309,7 +425,304 @@ class ProvisionByRequestView(UpdateView):
         """Pass success message when form is validated"""
         messages.success(
             self.request,
-            item_provision_message(form.instance.item.name, form.instance.user.email)
+            item_provision_message(
+                form.instance.item.name,
+                form.instance.user.email
+            )
         )
 
         return super(ProvisionByRequestView, self).form_valid(form)
+
+
+class PasswordChangeView(FormView):
+    template_name = 'change_password.html'
+    form_class = PasswordChangeForm
+    success_url = reverse_lazy('dashboard')
+
+    def get_form_kwargs(self):
+        kwargs = super(PasswordChangeView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        """
+        If the form is valid, redirect to the supplied URL.
+        """
+        form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class LoadMoreView(View):
+    """View to load more provisions in the dashboard via ajax"""
+
+    def get(self, request):
+        if request.is_ajax():
+            """Process AJAX request and send required data"""
+            load_more_pending = request.GET.get('load_more_pending', False)
+            load_more_approved = request.GET.get('load_more_approved', False)
+
+            provisions = Provision.objects.filter(returned=False)
+            is_admin = request.user.is_admin
+
+            if is_admin:
+                pending = provisions.filter(
+                    approved=False,
+                ).order_by('timestamp')
+
+                approved = provisions.filter(
+                    approved=True,
+                    returned=False
+                ).order_by('-timestamp')
+
+            else:
+                pending = provisions.filter(
+                    user=self.request.user,
+                    approved=False
+                ).order_by('timestamp')
+                approved = provisions.filter(
+                    user=self.request.user,
+                    approved=True
+                ).order_by('-timestamp')
+
+            pending = pending[5:]
+            approved = approved[5:]
+
+            # Load more pending requests
+            if load_more_pending:
+                p_list = list(pending)
+                p_dict = {
+                    'pending': []
+                }
+
+                for p in p_list:
+                    p_dict['pending'].append({
+                        'item_name': p.item.name,
+                        'description': (p.item.description[:75] + '...') if len(
+                            p.item.description) > 75 else p.item.description,
+                        'provision_id': p.id
+                    })
+
+                return JsonResponse(p_dict)
+
+            # Load more approved requests
+            if load_more_approved:
+                a_list = list(approved)
+                a_dict = {
+                    'approved': []
+                }
+
+                for a in a_list:
+                    a_dict['approved'].append({
+                        'provision_id': a.id,
+                        'item_name': a.item.name,
+                        'description': (a.item.description[:75] + '...') if len(a.item.description) > 75 else a.item.description,
+                        'returnable': 'Yes' if a.item.returnable else 'No',
+                        'return_by': a.return_by.strftime("%d %b %y") if a.return_by else 'N/A',
+                        'user_email': a.user.email,
+                        'returned': 'Yes' if a.returned else 'No' if a.item.returnable else 'N/A',
+                    })
+
+                return JsonResponse(a_dict)
+
+
+class ImageUploadView(UpdateView):
+    model = User
+    form_class = ImageUploadForm
+
+    def get_object(self, queryset=None):
+        obj = User.objects.get(id=self.request.user.id)
+        return obj
+
+    def post(self, request, *args, **kwargs):
+
+        if request.is_ajax():
+
+            clear = request.POST.get('clear_image', False)
+            self.object = self.get_object()
+            form = self.get_form()
+            form.instance.delete_image()
+            form.instance.image = ''
+
+            if not clear:
+                if form.is_valid():
+                    self.object = form.save()
+                    resp = {
+                        'success': 'True',
+                        'image': form.instance.image.url,
+                    }
+                else:
+                    resp = {
+                        'success': 'False',
+                        'error': list(form.errors['image']),
+                    }
+            else:
+                form.instance.save()
+                resp = {
+                    'success': 'True',
+                }
+
+            return JsonResponse(resp)
+
+
+class UserAutocompleteView(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Don't forget to filter out results depending on the visitor !
+        if not self.request.user.is_authenticated():
+            return User.objects.none()
+
+        qs = User.objects.all()
+
+        if self.q:
+            qs = qs.filter(email__istartswith=self.q)
+
+        return qs
+
+
+class ItemAutocompleteView(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Don't forget to filter out results depending on the visitor !
+        if not self.request.user.is_authenticated():
+            return Item.objects.none()
+
+        qs = Item.objects.exclude(quantity=0)
+
+        if self.q:
+            qs = qs.filter(name__istartswith=self.q)
+
+        return qs
+
+
+class ImageTestView(TemplateView):
+    template_name = 'image_test.html'
+
+
+class SwitchRoleView(RedirectView):
+    """View for logout"""
+
+    url = reverse_lazy('dashboard')
+    permanent = False
+    http_method_names = ['get', ]
+
+    def get(self, request, *args, **kwargs):
+        """Processing get request and switch the role"""
+        url = self.get_redirect_url(*args, **kwargs)
+        if request.user.is_authenticated():
+            if request.user.is_admin:
+                request.user.is_admin = False
+                request.switched = True
+                print 'user is admin ' + str(request.user.is_admin)
+
+            elif request.user.is_admin == False and request.switched == True:
+                request.user.is_admin = True
+                request.switched = False
+
+            else:
+                raise Http404()
+
+        else:
+            return HttpResponseRedirect(reverse_lazy('login'))
+
+        return HttpResponseRedirect(url)
+
+
+class ReportView(TemplateView):
+    template_name = 'report.html'
+
+    def get_context_data(self, **kwargs):
+        if 'view' not in kwargs:
+            kwargs['view'] = self
+        if 'form' not in kwargs:
+            kwargs['form'] = DateFilterForm()
+        return kwargs
+
+
+class ReportAjaxView(View):
+
+    def get(self, request):
+        if request.is_ajax():
+
+            # Saving the GET variables to filter data
+            returnable = request.GET.get('r', True)
+            non_returnable = request.GET.get('nr', True)
+            start_date = request.GET.get('sd', '')
+            end_date = request.GET.get('ed', '')
+
+            # Storing all the item and provision objects
+            items = Item.objects.all()
+            provisions = Provision.objects.filter(approved=True)
+
+            # Cutting down the irrelevant objects, as per filters
+            if returnable == 'true' and non_returnable == 'false':
+                items = items.filter(returnable=True)
+            if non_returnable == 'true' and returnable == 'false':
+                items = items.filter(returnable=False)
+            if not start_date == '':
+                start_date = datetime.strptime(str(start_date), '%Y-%m-%d %H:%M:%S')
+                for provision in provisions:
+                    if provision.approved_on < start_date:
+                        provisions = provisions.exclude(id=provision.id)
+            if not end_date == '':
+                end_date = datetime.strptime(str(end_date), '%Y-%m-%d %H:%M:%S')
+                for provision in provisions:
+                    if provision.approved_on > end_date:
+                        provisions = provisions.exclude(id=provision.id)
+
+            # Storing the final results for response data
+            data = []
+
+            for item in items:
+                row = []
+                row.append(item.name)
+                row.append(item.description)
+                if item.returnable:
+                    row.append('Yes')
+                else:
+                    row.append('No')
+                count = 0
+                for provision in provisions.filter(item=item):
+                    count += provision.quantity
+                row.append(count)
+                if count:
+                    data.append(row)
+
+            resp = {
+                "draw": 10,
+                "recordsTotal": provisions.count(),
+                "recordsFiltered": provisions.count(),
+                "data": data
+            }
+
+            return JsonResponse(resp)
+
+        else:
+            raise Http404()
+
+    def post(self, request):
+
+        csv = request.POST.get('csv')
+
+        # Generating a temporary file for attaching in the mail
+        filename = '/tmp/Report.csv'
+        temp = open(filename, 'w+b')
+        try:
+            # Writing csv data to file
+            temp.write(csv)
+            temp.close()
+            temp = open(filename, 'r')
+
+            # Sending mail with attachment
+            mail = EmailMessage(
+                    subject='Report',
+                    body='Report attached',
+                    to=[str(request.user.email)],
+                )
+            mail.attach('Report.csv', temp.read(), 'text/csv')
+            mail.send()
+        finally:
+            os.remove(filename)
+
+        resp = {
+            'success': 'True'
+        }
+
+        return JsonResponse(resp)

@@ -7,9 +7,63 @@
 {% endif %}
 {% block content %}
     <h1>Provision Item</h1>
-    <form method="POST" class="item-form">{% csrf_token %}
-        {{ form.as_p }}
+    <form method="POST" class="provision-form">
+        {% csrf_token %}
+        {{ formset.media }}
+        <fieldset id="provision-formset">
+            {{ formset.management_form }}
+            {% for form in formset %}
+                <div class="row provision-unit">
+                    <div class="col-md-3">
+                        <label for="{{ form.item.id_for_label }}">Item</label>
+                        {{ form.item.errors }}
+                        {{ form.item }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="{{ form.user.id_for_label }}">User</label>
+                        {{ form.user.errors }}
+                        {{ form.user }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="{{ form.return_by.id_for_label }}">Return by</label>
+                        {{ form.return_by.errors }}
+                        {{ form.return_by }}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+                        {{ form.quantity.errors }}
+                        {{ form.quantity }}
+                    </div>
+                </div>
+            {% endfor %}
+        </fieldset>
+        <a href="#" class="btn btn-default" id="add_more_provision">Add More</a>
         <button type="submit" class="save btn btn-default">Save</button>
         <a href="{% url 'dashboard' %}" class="btn btn-default">Cancel</a>
+
+        <div id="empty_form" style="display: none;">
+            <div class="row provision-unit">
+                <div class="col-md-3">
+                    <label for="{{ formset.empty_form.item.id_for_label }}">Item</label>
+                    {{ formset.empty_form.item.errors }}
+                    {{ formset.empty_form.item }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ formset.empty_form.user.id_for_label }}">User</label>
+                    {{ formset.empty_form.user.errors }}
+                    {{ formset.empty_form.user }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ formset.empty_form.return_by.id_for_label }}">Return by</label>
+                    {{ formset.empty_form.return_by.errors }}
+                    {{ formset.empty_form.return_by }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ formset.empty_form.quantity.id_for_label }}">Quantity</label>
+                    {{ formset.empty_form.quantity.errors }}
+                    {{ formset.empty_form.quantity }}
+                </div>
+            </div>
+        </div>
     </form>
 {% endblock %}
