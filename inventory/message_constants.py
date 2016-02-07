@@ -7,6 +7,8 @@ LOGIN_INVALID_MESSAGE = 'Please check your credentials'
 LOGOUT_SUCCESS_MESSAGE = 'You have been logged out'
 REQUEST_SUBMITTED_MESSAGE = 'Your request has been submitted'
 ITEM_RETURNED_MESSAGE = 'The item has been marked returned'
+PASSWORD_CHANGE_SUCCESS_MESSAGE = 'Password has been changed successfully'
+PROFILE_UPDATE_SUCCESS_MESSAGE = 'Profile has been updated successfully'
 
 
 def item_added_message(item_name):

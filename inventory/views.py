@@ -1,6 +1,7 @@
 """Inventory app views"""
 
 from django.contrib import auth, messages
+from django.contrib.auth.forms import PasswordChangeForm
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
@@ -52,7 +53,7 @@ class LoginView(View):
         else:
             email = request.POST['email']
             password = request.POST['password']
-            remember = request.POST['remember']
+            remember = request.POST.get('remember', False)
             user = auth.authenticate(email=email, password=password)
 
             if user:
@@ -157,6 +158,61 @@ class EditProfileView(FormView):
         """If the form is valid, save the object in db"""
         form.save()
         return super(EditProfileView, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        """Save both the forms in context"""
+        if 'form2' not in kwargs:
+            kwargs['form2'] = PasswordChangeForm(user=self.request.user)
+            return super(EditProfileView, self).get_context_data(**kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """Checking if password form is submitted"""
+        password_form_submitted = request.POST.get('change_password', False)
+
+        if password_form_submitted:
+            """Process the password form"""
+            form2_kwargs = {
+                'data': request.POST,
+            }
+
+            form = self.form_class(instance=request.user)
+            form2 = PasswordChangeForm(request.user, **form2_kwargs)
+
+            if form2.is_valid():
+                # Passing message
+                messages.success(
+                    request,
+                    PASSWORD_CHANGE_SUCCESS_MESSAGE
+                )
+
+                # Going to success url
+                return self.form_valid(form2)
+
+        else:
+            """Process the profile update form"""
+            form = self.get_form()
+            form2 = PasswordChangeForm(user=self.request.user)
+
+            if form.is_valid():
+                # Passing message
+                if form.has_changed():
+                    messages.success(
+                        request,
+                        PROFILE_UPDATE_SUCCESS_MESSAGE
+                    )
+
+                # Going to success url
+                return self.form_valid(form)
+
+            else:
+                return self.form_invalid(form)
+
+        context = {
+            'form': form,
+            'form2': form2
+        }
+
+        return self.render_to_response(context)
 
 
 class ItemsListView(ListView):
