@@ -3,7 +3,7 @@
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.views.generic import (
@@ -109,7 +109,10 @@ class DashboardView(TemplateView):
         }
 
         if is_admin:
-            pending = provisions.filter(approved=False).order_by('timestamp')
+            pending = provisions.filter(
+                approved=False,
+            ).order_by('timestamp')
+
             approved = provisions.filter(
                 approved=True,
                 returned=False
@@ -125,8 +128,24 @@ class DashboardView(TemplateView):
                 approved=True
             ).order_by('-timestamp')
 
+        if pending.count() > 5:
+            pending_more = True
+        else:
+            pending_more = False
+
+        if approved.count() > 5:
+            approved_more = True
+        else:
+            approved_more = False
+
+        pending = pending[:5]
+        approved = approved[:5]
+
         context['pending'] = pending
         context['approved'] = approved
+        context['pending_more'] = pending_more
+        context['approved_more'] = approved_more
+
         return context
 
 
@@ -369,3 +388,80 @@ class ProvisionByRequestView(UpdateView):
         )
 
         return super(ProvisionByRequestView, self).form_valid(form)
+
+
+class LoadMoreView(View):
+    """View to load more provisions in the dashboard via ajax"""
+
+    def get(self, request):
+        if request.is_ajax():
+            """Process AJAX request and send required data"""
+            load_more_pending = request.GET.get('load_more_pending', False)
+            load_more_approved = request.GET.get('load_more_approved', False)
+
+            provisions = Provision.objects.filter(returned=False)
+            is_admin = request.user.is_admin
+
+            if is_admin:
+                pending = provisions.filter(
+                    approved=False,
+                ).order_by('timestamp')
+
+                approved = provisions.filter(
+                    approved=True,
+                    returned=False
+                ).order_by('-timestamp')
+
+            else:
+                pending = provisions.filter(
+                    user=self.request.user,
+                    approved=False
+                ).order_by('timestamp')
+                approved = provisions.filter(
+                    user=self.request.user,
+                    approved=True
+                ).order_by('-timestamp')
+
+            pending = pending[5:]
+            approved = approved[5:]
+
+            # Load more pending requests
+            if load_more_pending:
+                p_list = list(pending)
+                p_dict = {
+                    'pending': []
+                }
+
+                for p in p_list:
+                    p_dict['pending'].append({
+                        'item_name': p.item.name,
+                        'description': (p.item.description[:75] + '...') if len(
+                            p.item.description) > 75 else p.item.description,
+                        'provision_id': p.id
+                    })
+
+                return JsonResponse(p_dict)
+
+            # Load more approved requests
+            if load_more_approved:
+                a_list = list(approved)
+                a_dict = {
+                    'approved': []
+                }
+
+                for a in a_list:
+                    a_dict['approved'].append({
+                        'provision_id': a.id,
+                        'item_name': a.item.name,
+                        'description': (a.item.description[:75] + '...') if len(
+                            a.item.description) > 75 else a.item.description,
+                        'returnable': 'Yes' if a.item.returnable else 'No',
+                        'return_by': a.return_by.strftime("%d %b %y") if a.return_by else 'N/A',
+                        'user_email': a.user.email,
+                        'returned': 'Yes' if a.returned else 'No' if a.item.returnable else 'N/A',
+                    })
+
+                return JsonResponse(a_dict)
+
+        else:
+            raise Http404()

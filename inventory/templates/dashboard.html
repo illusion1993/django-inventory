@@ -6,7 +6,7 @@
 
 <div class="table-container">
     <h1>Pending Requests</h1>
-    <table class="table-striped table-bordered">
+    <table class="table-striped table-bordered" id="pending_table">
         <tr>
             <th>Item</th>
             {% if is_admin %}
@@ -28,10 +28,11 @@
             </tr>
         {% endfor %}
     </table>
+    <a href="#" id="load_more_pending" action="{% url 'load_more_ajax' %}">Load More</a>
 </div>
 <div class="table-container">
     <h1>Approved Requests</h1>
-    <table class="table-striped table-bordered">
+    <table class="table-striped table-bordered" id="approved_table">
         <tr>
             <th>Item</th>
             <th>Description</th>
@@ -54,7 +55,7 @@
                         No
                     {% endif %}</td>
                 <td>{% if req.item.returnable %}
-                        {{ req.return_by }}
+                        {{ req.return_by|date:"d M y" }}
                     {% else %}
                         N/A
                     {% endif %}</td>
@@ -80,6 +81,14 @@
             </tr>
         {% endfor %}
     </table>
+    <a href="#" id="load_more_approved" action="{% url 'load_more_ajax' %}">Load More</a>
 </div>
+
+    <script>
+        // Javascript variables
+        var is_admin = {% if is_admin %}'True'{% else %}'False'{% endif %},
+            provision_list_url = '{% url 'provision_list' %}',
+            provision_item_url = '{% url 'provision_item' %}';
+    </script>
 
 {% endblock %}
