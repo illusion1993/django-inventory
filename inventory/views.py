@@ -29,6 +29,8 @@ from inventory.forms import (
     ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm)
 from inventory.message_constants import *
 
+from dal import autocomplete
+
 
 class LoginView(View):
     """View for login page"""
@@ -532,3 +534,31 @@ class ImageUploadView(UpdateView):
 
         else:
             raise Http404()
+
+
+class UserAutocompleteView(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # filter out results depending on the visitor !
+        if not self.request.user.is_authenticated():
+            return User.objects.none()
+
+        qs = User.objects.all()
+
+        if self.q:
+            qs = qs.filter(email__istartswith=self.q)
+
+        return qs
+
+
+class ItemAutocompleteView(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # filter out results depending on the visitor !
+        if not self.request.user.is_authenticated():
+            return Item.objects.none()
+
+        qs = Item.objects.exclude(quantity=0)
+
+        if self.q:
+            qs = qs.filter(name__istartswith=self.q)
+
+        return qs

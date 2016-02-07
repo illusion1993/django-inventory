@@ -8,6 +8,8 @@ from inventory.message_constants import *
 
 from inventory.models import User, Item, Provision
 
+from dal import autocomplete
+
 # Forms for admin panel
 class CustomUserCreationForm(UserCreationForm):
     """Form to create new user"""
@@ -176,6 +178,10 @@ class ProvisionItemForm(forms.ModelForm):
             'return_by',
             'quantity'
         )
+        widgets = {
+            'user': autocomplete.ModelSelect2(url='user_autocomplete_ajax'),
+            'item': autocomplete.ModelSelect2(url='item_autocomplete_ajax'),
+        }
 
 
 class ProvisionItemByRequestForm(forms.ModelForm):

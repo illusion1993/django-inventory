@@ -3,26 +3,8 @@ from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
-from inventory.views import (
-    LoginView,
-    DashboardView,
-    LogoutView,
-    ProfileView,
-    EditProfileView,
-    ItemsListView,
-    AddItemView,
-    EditItemView,
-    RequestItemView,
-    ProvisionListView,
-    ReturnItemView,
-    ProvisionItemView,
-    ProvisionByRequestView,
-    EditItemListView,
-    LoadMoreView, ImageUploadView)
-from inventory.decorators import (
-    admin_required,
-    user_required,
-)
+from inventory.views import *
+from inventory.decorators import *
 
 urlpatterns = patterns(
     '',
@@ -152,5 +134,19 @@ urlpatterns = patterns(
             login_url='login'
         ),
         name="image_upload_ajax"
+    ),
+    url(
+        r'^ajax/user_autocomplete/$',
+        admin_required(
+            UserAutocompleteView.as_view(),
+        ),
+        name="user_autocomplete_ajax"
+    ),
+    url(
+        r'^ajax/item_autocomplete/$',
+        admin_required(
+            ItemAutocompleteView.as_view(),
+        ),
+        name="item_autocomplete_ajax"
     ),
 )
