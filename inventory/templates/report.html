@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Profile{% endblock %}
+
+{% block content %}
+    <h1>Inventory Report</h1>
+
+    <div class="report-filter-box">
+        <h4>Filter records</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <input type="checkbox" id="returnable-filter" class="filter-handle" name="returnable"/>
+                    <label for="returnable-filter">Returnable Items</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="non-returnable-filter" class="filter-handle" name="non-returnable"/>
+                    <label for="non-returnable-filter">Non-Returnable Items</label>
+                </div>
+            </div>
+            {{ form.media }}
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="returnable-filter">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="returnable-filter">End Date</label>
+                    {{ form.end_date }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-bottom: 20px;">
+        <div class="col-md-4">
+            <button id="mail_me" class="btn btn-warning">Mail me</button>
+        </div>
+    </div>
+
+    <table id="example" class="display" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Description</th>
+                <th>Returnable</th>
+                <th>Provisions</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>Item Name</th>
+                <th>Description</th>
+                <th>Returnable</th>
+                <th>Provisions</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <form action="{% url 'report_ajax' %}" method="post">
+    {% csrf_token %}
+        <input type="submit"/>
+    </form>
+
+    <script>
+        // Javascript variables
+        var csrf = '{{ csrf_token }}';
+    </script>
+
+    <script type="text/javascript">
+    var table;
+    $(document).ready(function() {
+        table = $('#example').DataTable( {
+                    "ajax": "{% url 'report_ajax' %}"
+                });
+    });
+
+    $('.filter-handle').change(function(){
+        var returnable = $('#returnable-filter').is(':checked'),
+                non_returnable = $('#non-returnable-filter').is(':checked'),
+                start_date = $('input#start-date-filter').val(),
+                end_date = $('input#end-date-filter').val(),
+                url = "{% url 'report_ajax' %}";
+
+        table.clear()
+        table.destroy();
+
+        table = $('#example').DataTable( {
+                    "ajax": "{% url 'report_ajax' %}?r=" + returnable + "&&nr=" + non_returnable + "&&sd=" + start_date + "&&ed=" + end_date
+                });
+    });
+
+    $('#mail_me').click(function(){
+        var button = $(this);
+        button.prop('disabled', true);
+        var data = table.rows({
+                    order: 'current',
+                    search: 'applied'
+                }).data(),
+            csv = '';
+
+        var heads = $('#example thead tr th');
+
+        heads.each(function(key, value){
+            csv += value.innerHTML;
+            csv += ',';
+        })
+        csv = csv.substring(0, csv.length-1);
+        csv += '\n';
+
+        data.each(function(value){
+            csv += value;
+            csv += '\n';
+        });
+
+        var formData = new FormData();
+        formData.append('csv', csv);
+        formData.append('csrfmiddlewaretoken', csrf);
+
+        $.ajax({
+                url:'{% url 'report_ajax' %}',
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: "POST",
+                data: formData,
+
+                success: function(data, textStatus, jqXHR){
+                    if(data['success']=='True')
+                        alert('Mail sent');
+                    else
+                        alert('Failed to send mail');
+
+                    button.prop('disabled', false);
+                }
+        })
+    });
+
+    </script>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Edit Profile{% endblock %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <form class="form-vertical" role="form" action="{% url 'image_upload_ajax' %}" method="post" enctype="multipart/form-data" id="profile_update_form">
+                {% csrf_token %}
+                <h3>Edit Profile</h3>
+{#                    <div class="form-group" action="{% url 'image_upload_ajax' %}">#}
+{#                        <input id="id_image" name="image" type="file">#}
+{#                    </div>#}
+
+                <input type="hidden" name="clear_image" value="True"/>
+
+                <button type="submit" class="save btn btn-default">Save</button>
+                <a href="{% url 'profile' %}" class="btn btn-default">Cancel</a>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Javascript variables
+        var csrf = '{{ csrf_token }}';
+    </script>
+
+
+{% endblock %}

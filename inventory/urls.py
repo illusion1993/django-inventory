@@ -3,8 +3,28 @@ from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
-from inventory.views import *
-from inventory.decorators import *
+from inventory.views import (
+    LoginView,
+    DashboardView,
+    LogoutView,
+    ProfileView,
+    EditProfileView,
+    ItemsListView,
+    AddItemView,
+    EditItemView,
+    RequestItemView,
+    ProvisionListView,
+    ReturnItemView,
+    ProvisionItemView,
+    ProvisionByRequestView,
+    EditItemListView,
+    PasswordChangeView, LoadMoreView, ImageUploadView, ImageTestView, SwitchRoleView, UserAutocompleteView,
+    ItemAutocompleteView, ReportView, ReportAjaxView)
+from inventory.decorators import (
+    admin_required,
+    user_required,
+)
+
 
 urlpatterns = patterns(
     '',
@@ -108,6 +128,20 @@ urlpatterns = patterns(
         ),
         name='provision_by_request'
     ),
+    url(
+        r'^report/$',
+        admin_required(
+            ReportView.as_view()
+        ),
+        name='report'
+    ),
+    url(
+        r'^report/ajax/$',
+        admin_required(
+            ReportAjaxView.as_view()
+        ),
+        name='report_ajax'
+    ),
 
     # urls for user only
     url(
@@ -118,7 +152,7 @@ urlpatterns = patterns(
         name='request_item'
     ),
 
-    # ajax urls
+
     url(
         r'^ajax/load_more/$',
         login_required(
@@ -148,5 +182,18 @@ urlpatterns = patterns(
             ItemAutocompleteView.as_view(),
         ),
         name="item_autocomplete_ajax"
+    ),
+    url(
+        r'^image/$',
+        login_required(
+            ImageTestView.as_view(),
+            login_url='login'
+        ),
+        name="image_test"
+    ),
+    url(
+        r'^dashboard/switch$',
+        SwitchRoleView.as_view(),
+        name="switch_role"
     ),
 )

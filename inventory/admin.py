@@ -78,7 +78,8 @@ class ProvisionAdmin(admin.ModelAdmin):
         'return_by',
         'quantity',
         'returned',
-        'returned_on'
+        'returned_on',
+        'request_by_user'
     )
 
 
