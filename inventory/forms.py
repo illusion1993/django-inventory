@@ -1,7 +1,7 @@
 """Inventory App Forms"""
 from datetime import datetime, timedelta
 
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, SetPasswordForm
 from django import forms
 from django.core.mail import EmailMessage
 from inventory.message_constants import *
