@@ -172,7 +172,9 @@ class ProvisionItemForm(forms.ModelForm):
         model = Provision
         fields = (
             'item',
-            'user'
+            'user',
+            'return_by',
+            'quantity'
         )
 
 

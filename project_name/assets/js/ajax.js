@@ -122,3 +122,9 @@ $('#image_clear').click(function(event){
         })
     }
 })
+
+$('#add_more_provision').click(function(){
+    var form_idx = $('#id_form-TOTAL_FORMS').val();
+    $('#provision-formset').append($('#empty_form').html().replace(/__prefix__/g, form_idx));
+    $('#id_form-TOTAL_FORMS').val(parseInt(form_idx) + 1);
+})
