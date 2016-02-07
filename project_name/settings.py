@@ -176,7 +176,9 @@ DJANGO_APPS = (
 THIRD_PARTY_APPS = (
     # Static file management:
     'compressor',
-    'inventory'
+    'inventory',
+    'dal',
+    'dal_select2'
 )
 
 LOCAL_APPS = (

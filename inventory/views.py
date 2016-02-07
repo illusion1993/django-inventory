@@ -3,6 +3,7 @@
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.urlresolvers import reverse_lazy
+from django.forms import formset_factory
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -27,6 +28,8 @@ from inventory.forms import (
     ProvisionItemForm,
     ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm)
 from inventory.message_constants import *
+
+from dal import autocomplete
 
 
 class LoginView(View):
@@ -350,20 +353,43 @@ class ProvisionItemView(FormView):
     """View for provision item page"""
 
     template_name = 'provision_item.html'
-    form_class = ProvisionItemForm
     success_url = reverse_lazy('dashboard')
 
-    def form_valid(self, form):
-        """Give success message when form is validated"""
+    def form_valid(self, formset):
+        """
+        If the form is valid, redirect to the supplied URL.
+        """
 
-        item_name = form.instance.item.name
-        user_email = form.instance.user.email
+        for form in formset:
+            form.save()
+
         messages.success(
             self.request,
-            item_provision_message(item_name, user_email)
+            'Items provisioned successfully'
         )
 
-        return super(ProvisionItemView, self).form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, formset):
+        context = {
+            'formset': formset
+        }
+        return self.render_to_response(context)
+
+    def get(self, request, *args, **kwargs):
+        context = {
+            'formset': formset_factory(ProvisionItemForm, extra=1)
+        }
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        ProvisionFormset = formset_factory(ProvisionItemForm)
+        formset = ProvisionFormset(request.POST, request.FILES)
+
+        if formset.is_valid():
+            return self.form_valid(formset)
+        else:
+            return self.form_invalid(formset)
 
 
 class ProvisionByRequestView(UpdateView):
@@ -508,3 +534,31 @@ class ImageUploadView(UpdateView):
 
         else:
             raise Http404()
+
+
+class UserAutocompleteView(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # filter out results depending on the visitor !
+        if not self.request.user.is_authenticated():
+            return User.objects.none()
+
+        qs = User.objects.all()
+
+        if self.q:
+            qs = qs.filter(email__istartswith=self.q)
+
+        return qs
+
+
+class ItemAutocompleteView(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # filter out results depending on the visitor !
+        if not self.request.user.is_authenticated():
+            return Item.objects.none()
+
+        qs = Item.objects.exclude(quantity=0)
+
+        if self.q:
+            qs = qs.filter(name__istartswith=self.q)
+
+        return qs
