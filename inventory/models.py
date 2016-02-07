@@ -139,6 +139,12 @@ class User(AbstractBaseUser):
         """get full name"""
         return self.first_name
 
+    def delete_image(self):
+        try:
+            os.remove(self.image.path)
+        except:
+            pass
+
 
 class Item(models.Model):
     """Model for inventory items"""
@@ -196,6 +202,10 @@ class Provision(models.Model):
 
     returned_on = models.DateTimeField(
         null=True,
+    )
+
+    request_by_user = models.BooleanField(
+        default=False
     )
 
     # def __unicode__(self):

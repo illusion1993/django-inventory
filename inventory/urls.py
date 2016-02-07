@@ -18,7 +18,7 @@ from inventory.views import (
     ProvisionItemView,
     ProvisionByRequestView,
     EditItemListView,
-    LoadMoreView)
+    LoadMoreView, ImageUploadView)
 from inventory.decorators import (
     admin_required,
     user_required,
@@ -136,7 +136,7 @@ urlpatterns = patterns(
         name='request_item'
     ),
 
-    # ajax views
+    # ajax urls
     url(
         r'^ajax/load_more/$',
         login_required(
@@ -144,5 +144,13 @@ urlpatterns = patterns(
             login_url='login'
         ),
         name="load_more_ajax"
+    ),
+    url(
+        r'^ajax/upload_image/$',
+        login_required(
+            ImageUploadView.as_view(),
+            login_url='login'
+        ),
+        name="image_upload_ajax"
     ),
 )
