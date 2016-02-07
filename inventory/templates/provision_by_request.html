@@ -7,14 +7,34 @@
 {% endif %}
 {% block content %}
     <h1>Provision Item By Request</h1>
-    <form method="POST" class="item-form">{% csrf_token %}
-        <p>
-            <label for="id_item">User:</label>
-            <select id="id_item" name="item" disabled>
-                <option selected>{{ provision.user.email }}</option>
-            </select>
-        </p>
-        {{ form.as_p }}
+    <form method="POST" class="item-form">
+        {% csrf_token %}
+        {{ form.media }}
+        <fieldset id="provision-formset">
+            <div class="row provision-unit">
+                <div class="col-md-3">
+                    <label for="id_user">User:</label>
+                    <select id="id_user" name="user" disabled class="form-control">
+                        <option selected>{{ provision.user.email }}</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.item.id_for_label }}">Item</label>
+                    {{ form.item.errors }}
+                    {{ form.item }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.return_by.id_for_label }}">Return by</label>
+                    {{ form.return_by.errors }}
+                    {{ form.return_by }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+                    {{ form.quantity.errors }}
+                    {{ form.quantity }}
+                </div>
+            </div>
+        </fieldset>
         <button type="submit" class="save btn btn-default">Save</button>
         <a href="{% url 'dashboard' %}" class="btn btn-default">Cancel</a>
     </form>

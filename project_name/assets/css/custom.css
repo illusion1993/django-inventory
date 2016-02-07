@@ -67,3 +67,28 @@ footer .nav{
     display: inline-block;
     float: none;
 }
+
+.provision-form .errorlist{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.provision-unit{
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    background: #f8f8f8;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 5px;
+}
+
+.provision-unit label{
+    display: block;
+}
+
+.report-filter-box{
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+}

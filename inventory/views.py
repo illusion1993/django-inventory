@@ -1,7 +1,11 @@
 """Inventory app views"""
+from datetime import datetime
+import os
+import tempfile
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse_lazy
 from django.forms import formset_factory
 from django.http import HttpResponseRedirect, Http404, JsonResponse
@@ -26,10 +30,11 @@ from inventory.forms import (
     EditItemForm,
     RequestItemForm,
     ProvisionItemForm,
-    ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm)
+    ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm, DateFilterForm)
 from inventory.message_constants import *
 
 from dal import autocomplete
+from inventory.signals import send_mail_signal
 
 
 class LoginView(View):
@@ -332,7 +337,7 @@ class ReturnItemView(UpdateView):
             id=pk,
             approved=True,
             returned=False,
-            )
+        )
 
         return obj
 
@@ -353,7 +358,17 @@ class ProvisionItemView(FormView):
     """View for provision item page"""
 
     template_name = 'provision_item.html'
+    # form_class = formset_factory(ProvisionItemForm)
+    # form_class = ProvisionItemForm
     success_url = reverse_lazy('dashboard')
+
+    # def get_context_data(self, **kwargs):
+    #     """
+    #     Insert the form into the context dict.
+    #     """
+    #     if 'formset' not in kwargs:
+    #         kwargs['formset'] = formset_factory(ProvisionItemForm)
+    #         return kwargs
 
     def form_valid(self, formset):
         """
@@ -410,10 +425,31 @@ class ProvisionByRequestView(UpdateView):
         """Pass success message when form is validated"""
         messages.success(
             self.request,
-            item_provision_message(form.instance.item.name, form.instance.user.email)
+            item_provision_message(
+                form.instance.item.name,
+                form.instance.user.email
+            )
         )
 
         return super(ProvisionByRequestView, self).form_valid(form)
+
+
+class PasswordChangeView(FormView):
+    template_name = 'change_password.html'
+    form_class = PasswordChangeForm
+    success_url = reverse_lazy('dashboard')
+
+    def get_form_kwargs(self):
+        kwargs = super(PasswordChangeView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        """
+        If the form is valid, redirect to the supplied URL.
+        """
+        form.save()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class LoadMoreView(View):
@@ -479,8 +515,7 @@ class LoadMoreView(View):
                     a_dict['approved'].append({
                         'provision_id': a.id,
                         'item_name': a.item.name,
-                        'description': (a.item.description[:75] + '...') if len(
-                            a.item.description) > 75 else a.item.description,
+                        'description': (a.item.description[:75] + '...') if len(a.item.description) > 75 else a.item.description,
                         'returnable': 'Yes' if a.item.returnable else 'No',
                         'return_by': a.return_by.strftime("%d %b %y") if a.return_by else 'N/A',
                         'user_email': a.user.email,
@@ -489,12 +524,8 @@ class LoadMoreView(View):
 
                 return JsonResponse(a_dict)
 
-        else:
-            raise Http404()
-
 
 class ImageUploadView(UpdateView):
-    """View to upload profile picture using AJAX"""
     model = User
     form_class = ImageUploadForm
 
@@ -532,13 +563,10 @@ class ImageUploadView(UpdateView):
 
             return JsonResponse(resp)
 
-        else:
-            raise Http404()
-
 
 class UserAutocompleteView(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        # filter out results depending on the visitor !
+        # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated():
             return User.objects.none()
 
@@ -552,7 +580,7 @@ class UserAutocompleteView(autocomplete.Select2QuerySetView):
 
 class ItemAutocompleteView(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        # filter out results depending on the visitor !
+        # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated():
             return Item.objects.none()
 
@@ -562,3 +590,139 @@ class ItemAutocompleteView(autocomplete.Select2QuerySetView):
             qs = qs.filter(name__istartswith=self.q)
 
         return qs
+
+
+class ImageTestView(TemplateView):
+    template_name = 'image_test.html'
+
+
+class SwitchRoleView(RedirectView):
+    """View for logout"""
+
+    url = reverse_lazy('dashboard')
+    permanent = False
+    http_method_names = ['get', ]
+
+    def get(self, request, *args, **kwargs):
+        """Processing get request and switch the role"""
+        url = self.get_redirect_url(*args, **kwargs)
+        if request.user.is_authenticated():
+            if request.user.is_admin:
+                request.user.is_admin = False
+                request.switched = True
+                print 'user is admin ' + str(request.user.is_admin)
+
+            elif request.user.is_admin == False and request.switched == True:
+                request.user.is_admin = True
+                request.switched = False
+
+            else:
+                raise Http404()
+
+        else:
+            return HttpResponseRedirect(reverse_lazy('login'))
+
+        return HttpResponseRedirect(url)
+
+
+class ReportView(TemplateView):
+    template_name = 'report.html'
+
+    def get_context_data(self, **kwargs):
+        if 'view' not in kwargs:
+            kwargs['view'] = self
+        if 'form' not in kwargs:
+            kwargs['form'] = DateFilterForm()
+        return kwargs
+
+
+class ReportAjaxView(View):
+
+    def get(self, request):
+        if request.is_ajax():
+
+            # Saving the GET variables to filter data
+            returnable = request.GET.get('r', True)
+            non_returnable = request.GET.get('nr', True)
+            start_date = request.GET.get('sd', '')
+            end_date = request.GET.get('ed', '')
+
+            # Storing all the item and provision objects
+            items = Item.objects.all()
+            provisions = Provision.objects.filter(approved=True)
+
+            # Cutting down the irrelevant objects, as per filters
+            if returnable == 'true' and non_returnable == 'false':
+                items = items.filter(returnable=True)
+            if non_returnable == 'true' and returnable == 'false':
+                items = items.filter(returnable=False)
+            if not start_date == '':
+                start_date = datetime.strptime(str(start_date), '%Y-%m-%d %H:%M:%S')
+                for provision in provisions:
+                    if provision.approved_on < start_date:
+                        provisions = provisions.exclude(id=provision.id)
+            if not end_date == '':
+                end_date = datetime.strptime(str(end_date), '%Y-%m-%d %H:%M:%S')
+                for provision in provisions:
+                    if provision.approved_on > end_date:
+                        provisions = provisions.exclude(id=provision.id)
+
+            # Storing the final results for response data
+            data = []
+
+            for item in items:
+                row = []
+                row.append(item.name)
+                row.append(item.description)
+                if item.returnable:
+                    row.append('Yes')
+                else:
+                    row.append('No')
+                count = 0
+                for provision in provisions.filter(item=item):
+                    count += provision.quantity
+                row.append(count)
+                if count:
+                    data.append(row)
+
+            resp = {
+                "draw": 10,
+                "recordsTotal": provisions.count(),
+                "recordsFiltered": provisions.count(),
+                "data": data
+            }
+
+            return JsonResponse(resp)
+
+        else:
+            raise Http404()
+
+    def post(self, request):
+
+        csv = request.POST.get('csv')
+
+        # Generating a temporary file for attaching in the mail
+        filename = '/tmp/Report.csv'
+        temp = open(filename, 'w+b')
+        try:
+            # Writing csv data to file
+            temp.write(csv)
+            temp.close()
+            temp = open(filename, 'r')
+
+            # Sending mail with attachment
+            mail = EmailMessage(
+                    subject='Report',
+                    body='Report attached',
+                    to=[str(request.user.email)],
+                )
+            mail.attach('Report.csv', temp.read(), 'text/csv')
+            mail.send()
+        finally:
+            os.remove(filename)
+
+        resp = {
+            'success': 'True'
+        }
+
+        return JsonResponse(resp)
