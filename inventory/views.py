@@ -25,7 +25,7 @@ from inventory.forms import (
     EditItemForm,
     RequestItemForm,
     ProvisionItemForm,
-    ProvisionItemByRequestForm, ReturnItemForm)
+    ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm)
 from inventory.message_constants import *
 
 
@@ -462,6 +462,49 @@ class LoadMoreView(View):
                     })
 
                 return JsonResponse(a_dict)
+
+        else:
+            raise Http404()
+
+
+class ImageUploadView(UpdateView):
+    """View to upload profile picture using AJAX"""
+    model = User
+    form_class = ImageUploadForm
+
+    def get_object(self, queryset=None):
+        obj = User.objects.get(id=self.request.user.id)
+        return obj
+
+    def post(self, request, *args, **kwargs):
+
+        if request.is_ajax():
+
+            clear = request.POST.get('clear_image', False)
+            self.object = self.get_object()
+            form = self.get_form()
+            form.instance.delete_image()
+            form.instance.image = ''
+
+            if not clear:
+                if form.is_valid():
+                    self.object = form.save()
+                    resp = {
+                        'success': 'True',
+                        'image': form.instance.image.url,
+                    }
+                else:
+                    resp = {
+                        'success': 'False',
+                        'error': list(form.errors['image']),
+                    }
+            else:
+                form.instance.save()
+                resp = {
+                    'success': 'True',
+                }
+
+            return JsonResponse(resp)
 
         else:
             raise Http404()

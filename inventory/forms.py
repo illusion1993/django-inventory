@@ -260,3 +260,12 @@ class ReturnItemForm(forms.ModelForm):
         """Meta Class"""
         model = Provision
         fields = ()
+
+
+class ImageUploadForm(forms.ModelForm):
+    """Form to upload image via ajax"""
+
+    class Meta:
+        """Meta Class"""
+        model = User
+        fields = ('image',)

@@ -55,3 +55,70 @@ $('#load_more_approved').click(function (event){
             }
         });
 })
+
+$('#profile_update_form :input[type=file]').change(function(event){
+    var self = $(this),
+        image = self[0].files[0],
+        arr = image.name.split('.'),
+        ext = arr[arr.length - 1].toLowerCase(),
+        imagedata = new FormData();
+
+    var error_list = self.siblings('.errorlist');
+
+    imagedata.append('image', image);
+    imagedata.append('csrfmiddlewaretoken', csrf);
+
+    if(ext=='jpg' || ext=='jpeg' || ext=='png'){
+        var ajax_req = $.ajax({
+                url:self.parent().attr("action"),
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: "POST",
+                data: imagedata,
+
+                success: function(data, textStatus, jqXHR){
+                    if(data['success'] == 'True'){
+                        error_list.remove();
+                        $('#profile_image').attr('src', data['image']);
+                    }
+                    else{
+                        error_list.remove();
+                        var error_list_new = '<ul class="errorlist"><li>' + data['error'] + '</li></ul>';
+                        self.parent().append(error_list_new);
+                    }
+                }
+            })
+    }
+    else{
+        error_list.remove();
+        var error_list_new = '<ul class="errorlist"><li>Select a valid image. The file you selected was either not an image or a corrupted image.</li></ul>';
+        self.parent().append(error_list_new);
+    }
+})
+
+$('#image_clear').click(function(event){
+    event.preventDefault();
+    var img_url = $('#profile_image').attr('src');
+    if(img_url != ''){
+        var self = $(this),
+        formData = new FormData();
+
+        formData.append('clear_image', 'True');
+        formData.append('csrfmiddlewaretoken', csrf);
+
+        $.ajax({
+                url:self.parent().attr("action"),
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: "POST",
+                data: formData,
+
+                success: function(data, textStatus, jqXHR){
+                    alert('Image removed');
+                    $('#profile_image').attr('src', '');
+                }
+        })
+    }
+})
