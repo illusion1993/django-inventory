@@ -18,7 +18,7 @@ from inventory.views import (
     ProvisionItemView,
     ProvisionByRequestView,
     EditItemListView,
-    PasswordChangeView, LoadMoreView, ImageUploadView, ImageTestView, SwitchRoleView, UserAutocompleteView,
+    LoadMoreView, ImageUploadView, UserAutocompleteView,
     ItemAutocompleteView, ReportView, ReportAjaxView)
 from inventory.decorators import (
     admin_required,
@@ -143,16 +143,17 @@ urlpatterns = patterns(
         name='report_ajax'
     ),
 
-    # urls for user only
+    # urls for user role (but admin can also access)
     url(
         r'^request/$',
-        user_required(
-            RequestItemView.as_view()
+        login_required(
+            RequestItemView.as_view(),
+            login_url='login'
         ),
         name='request_item'
     ),
 
-
+    # urls to handle AJAX requests
     url(
         r'^ajax/load_more/$',
         login_required(
@@ -182,18 +183,5 @@ urlpatterns = patterns(
             ItemAutocompleteView.as_view(),
         ),
         name="item_autocomplete_ajax"
-    ),
-    url(
-        r'^image/$',
-        login_required(
-            ImageTestView.as_view(),
-            login_url='login'
-        ),
-        name="image_test"
-    ),
-    url(
-        r'^dashboard/switch$',
-        SwitchRoleView.as_view(),
-        name="switch_role"
     ),
 )

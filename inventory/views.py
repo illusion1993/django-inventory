@@ -111,6 +111,9 @@ class DashboardView(TemplateView):
         provisions = Provision.objects.filter(returned=False)
         is_admin = user.is_admin
         is_user = user.is_authenticated() and not user.is_admin
+        if user.is_admin and self.request.GET.get('user', False):
+            is_admin = False
+            is_user = True
         context = {
             'is_admin': is_admin,
             'is_user': is_user
@@ -358,17 +361,7 @@ class ProvisionItemView(FormView):
     """View for provision item page"""
 
     template_name = 'provision_item.html'
-    # form_class = formset_factory(ProvisionItemForm)
-    # form_class = ProvisionItemForm
     success_url = reverse_lazy('dashboard')
-
-    # def get_context_data(self, **kwargs):
-    #     """
-    #     Insert the form into the context dict.
-    #     """
-    #     if 'formset' not in kwargs:
-    #         kwargs['formset'] = formset_factory(ProvisionItemForm)
-    #         return kwargs
 
     def form_valid(self, formset):
         """
@@ -462,7 +455,11 @@ class LoadMoreView(View):
             load_more_approved = request.GET.get('load_more_approved', False)
 
             provisions = Provision.objects.filter(returned=False)
-            is_admin = request.user.is_admin
+
+            if request.user.is_admin and self.request.GET.get('is_admin', False) == 'True':
+                is_admin = True
+            else:
+                is_admin = False
 
             if is_admin:
                 pending = provisions.filter(
@@ -590,39 +587,6 @@ class ItemAutocompleteView(autocomplete.Select2QuerySetView):
             qs = qs.filter(name__istartswith=self.q)
 
         return qs
-
-
-class ImageTestView(TemplateView):
-    template_name = 'image_test.html'
-
-
-class SwitchRoleView(RedirectView):
-    """View for logout"""
-
-    url = reverse_lazy('dashboard')
-    permanent = False
-    http_method_names = ['get', ]
-
-    def get(self, request, *args, **kwargs):
-        """Processing get request and switch the role"""
-        url = self.get_redirect_url(*args, **kwargs)
-        if request.user.is_authenticated():
-            if request.user.is_admin:
-                request.user.is_admin = False
-                request.switched = True
-                print 'user is admin ' + str(request.user.is_admin)
-
-            elif request.user.is_admin == False and request.switched == True:
-                request.user.is_admin = True
-                request.switched = False
-
-            else:
-                raise Http404()
-
-        else:
-            return HttpResponseRedirect(reverse_lazy('login'))
-
-        return HttpResponseRedirect(url)
 
 
 class ReportView(TemplateView):
