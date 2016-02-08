@@ -175,11 +175,12 @@ DJANGO_APPS = (
 
 THIRD_PARTY_APPS = (
     # Static file management:
+    'celery',
     'compressor',
     'inventory',
     'datetimewidget',
     'dal',
-    'dal_select2'
+    'dal_select2',
 )
 
 LOCAL_APPS = (
@@ -282,3 +283,11 @@ TEMPLATE_DEBUG = DEBUG
 COMPRESS_URL = STATIC_URL
 
 AUTH_USER_MODEL = 'inventory.User'
+
+# CELERY STUFF
+BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'

@@ -61,6 +61,7 @@
 
     <form action="{% url 'report_ajax' %}" method="post">
     {% csrf_token %}
+        <input type="text" name="csv" value="aaa"/>
         <input type="submit"/>
     </form>
 
