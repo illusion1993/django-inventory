@@ -32,9 +32,12 @@ from inventory.forms import (
     ProvisionItemForm,
     ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm, DateFilterForm)
 from inventory.message_constants import *
+from inventory.tasks import send_report
 
 from dal import autocomplete
 from inventory.signals import send_mail_signal
+
+from celery.task import task
 
 
 class LoginView(View):
@@ -665,28 +668,17 @@ class ReportAjaxView(View):
 
         csv = request.POST.get('csv')
 
-        # Generating a temporary file for attaching in the mail
-        filename = '/tmp/Report.csv'
-        temp = open(filename, 'w+b')
-        try:
-            # Writing csv data to file
-            temp.write(csv)
-            temp.close()
-            temp = open(filename, 'r')
-
-            # Sending mail with attachment
-            mail = EmailMessage(
-                    subject='Report',
-                    body='Report attached',
-                    to=[str(request.user.email)],
-                )
-            mail.attach('Report.csv', temp.read(), 'text/csv')
-            mail.send()
-        finally:
-            os.remove(filename)
+        if csv:
+            data = {
+                'csv': csv,
+                'user': request.user.email
+            }
+            send_report.delay(data)
 
         resp = {
             'success': 'True'
         }
 
         return JsonResponse(resp)
+
+
