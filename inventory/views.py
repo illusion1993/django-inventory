@@ -1,7 +1,6 @@
 """Inventory app views"""
 from datetime import datetime
 import os
-import tempfile
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
