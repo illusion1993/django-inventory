@@ -4,10 +4,13 @@ import os
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
-from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse_lazy
 from django.forms import formset_factory
-from django.http import HttpResponseRedirect, Http404, JsonResponse
+from django.http import (
+    HttpResponseRedirect,
+    Http404,
+    JsonResponse
+)
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.views.generic import (
@@ -17,82 +20,92 @@ from django.views.generic import (
     UpdateView,
     CreateView,
     ListView,
-    TemplateView, FormView)
+    TemplateView,
+    FormView
+)
 
 from inventory.models import (
     Provision,
     Item,
-    User)
+    User
+)
 from inventory.forms import (
     EditProfileForm,
     AddItemForm,
     EditItemForm,
     RequestItemForm,
     ProvisionItemForm,
-    ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm, DateFilterForm)
+    ProvisionItemByRequestForm,
+    ReturnItemForm,
+    ImageUploadForm,
+    DateFilterForm,
+    LoginForm)
 from inventory.message_constants import *
+from inventory.tasks import send_report
 
 from dal import autocomplete
-from inventory.signals import send_mail_signal
 
 
-class LoginView(View):
-    """View for login page"""
+class LoginFormView(FormView):
+    """
+    View for login page
+    """
 
-    def get(self, request):
-        """Get method for login page"""
-        if request.user.is_authenticated():
-            messages.warning(request, ALREADY_LOGGED_MESSAGE)
-            return HttpResponseRedirect(reverse_lazy('dashboard'))
+    form_class = LoginForm
+    template_name = 'login.html'
+    success_url = reverse_lazy('dashboard')
 
-        else:
-            if request.GET.get('next'):
-                messages.warning(request, LOGIN_REQUIRED_MESSAGE)
+    def form_valid(self, form):
+        """
+        If for is valid, authenticate user
+        """
+        # Initialize credentials for authentication
+        email = form.cleaned_data['email']
+        password = form.cleaned_data['password']
+        remember = form.cleaned_data['remember']
 
-            return TemplateResponse(request, 'login.html')
+        # Authenticate user
+        user = auth.authenticate(email=email, password=password)
 
-    def post(self, request):
-        """Post method for login page"""
-        if request.user.is_authenticated():
-            messages.warning(request, ALREADY_LOGGED_MESSAGE)
-            return HttpResponseRedirect(reverse_lazy('dashboard'))
+        # If authentication passed, send to dashboard
+        if user:
+            auth.login(self.request, user)
+            messages.success(self.request, LOGIN_SUCCESS_MESSAGE)
 
-        else:
-            email = request.POST['email']
-            password = request.POST['password']
-            remember = request.POST.get('remember', False)
-            user = auth.authenticate(email=email, password=password)
+            if not remember:
+                self.request.session.set_expiry(0)
 
-            if user:
-                auth.login(request, user)
-                messages.success(request, LOGIN_SUCCESS_MESSAGE)
-
-                if not remember:
-                    self.request.session.set_expiry(0)
-
-                if request.GET.get('next'):
-                    return HttpResponseRedirect(request.GET['next'])
-                else:
-                    return HttpResponseRedirect(reverse_lazy('dashboard'))
+            if self.request.GET.get('next'):
+                return HttpResponseRedirect(self.request.GET['next'])
             else:
-                messages.warning(request, LOGIN_INVALID_MESSAGE)
-                return TemplateResponse(
-                    request, 'login.html', {'email': email})
+                return super(LoginFormView, self).form_valid(form)
+        else:
+            messages.warning(self.request, LOGIN_INVALID_MESSAGE)
+            return super(LoginFormView, self).form_invalid(form)
 
 
 class LogoutView(RedirectView):
-    """View for logout"""
+    """
+    View for logout
+    """
 
     url = reverse_lazy('login')
     permanent = False
     http_method_names = ['get', ]
 
     def get(self, request, *args, **kwargs):
-        """Processing get request to log a user out"""
+        """
+        Processing get request to log a user out
+        """
+
         url = self.get_redirect_url(*args, **kwargs)
+
+        # If user was authenticated, log out
         if request.user.is_authenticated():
             auth.logout(request)
             messages.success(request, LOGOUT_SUCCESS_MESSAGE)
+
+        # Else raise 404 for anonymous users
         else:
             raise Http404()
 
@@ -100,16 +113,28 @@ class LogoutView(RedirectView):
 
 
 class DashboardView(TemplateView):
-    """View for dashboard page"""
+    """
+    View for dashboard page
+    """
 
     template_name = 'dashboard.html'
 
     def get_context_data(self, **kwargs):
-        """Fetching pending and approved requests for context"""
+        """
+        Fetching pending and approved requests for context
+        """
+
         user = self.request.user
         provisions = Provision.objects.filter(returned=False)
         is_admin = user.is_admin
         is_user = user.is_authenticated() and not user.is_admin
+
+        # Assign admin the role of user, if requested
+        if user.is_admin and self.request.GET.get('user', False):
+            is_admin = False
+            is_user = True
+
+        # Store role variables for context
         context = {
             'is_admin': is_admin,
             'is_user': is_user
@@ -157,42 +182,61 @@ class DashboardView(TemplateView):
 
 
 class ProfileView(DetailView):
-    """View for profile page"""
+    """
+    View for profile page
+    """
 
     model = User
     template_name = 'profile.html'
 
     def get_object(self, queryset=None):
-        """Fetching user profile for viewing"""
+        """
+        Fetching user profile for viewing
+        """
+
         obj = User.objects.get(id=self.request.user.id)
         return obj
 
 
 class EditProfileView(FormView):
-    """View for profile update page"""
+    """
+    View for profile update page
+    """
 
     template_name = 'edit_profile.html'
     form_class = EditProfileForm
     success_url = reverse_lazy('profile')
 
     def get_form(self, form_class):
-        """Load the form with the instance of user model object"""
+        """
+        Load the form with the instance of user model object
+        """
+
         ins = User.objects.get(id=self.request.user.id)
         return form_class(instance=ins, **self.get_form_kwargs())
 
     def form_valid(self, form):
-        """If the form is valid, save the object in db"""
+        """
+        If the form is valid, save the object in db
+        """
+
         form.save()
         return super(EditProfileView, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
-        """Save both the forms in context"""
+        """
+        Save both the forms in context
+        """
+
         if 'form2' not in kwargs:
             kwargs['form2'] = PasswordChangeForm(user=self.request.user)
             return super(EditProfileView, self).get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
-        """Checking if password form is submitted"""
+        """
+        Checking if password form is submitted
+        """
+
         password_form_submitted = request.POST.get('change_password', False)
 
         if password_form_submitted:
@@ -242,7 +286,9 @@ class EditProfileView(FormView):
 
 
 class ItemsListView(ListView):
-    """View for list of items"""
+    """
+    View for list of items
+    """
 
     model = Item
     context_object_name = 'item_list'
@@ -250,7 +296,9 @@ class ItemsListView(ListView):
 
 
 class AddItemView(CreateView):
-    """View for creating new item"""
+    """
+    View for creating new item
+    """
 
     model = Item
     form_class = AddItemForm
@@ -268,7 +316,9 @@ class AddItemView(CreateView):
 
 
 class EditItemListView(ListView):
-    """View for list of items to edit from"""
+    """
+    View for list of items to edit from
+    """
 
     model = Item
     context_object_name = 'item_list'
@@ -357,17 +407,7 @@ class ProvisionItemView(FormView):
     """View for provision item page"""
 
     template_name = 'provision_item.html'
-    # form_class = formset_factory(ProvisionItemForm)
-    # form_class = ProvisionItemForm
     success_url = reverse_lazy('dashboard')
-
-    # def get_context_data(self, **kwargs):
-    #     """
-    #     Insert the form into the context dict.
-    #     """
-    #     if 'formset' not in kwargs:
-    #         kwargs['formset'] = formset_factory(ProvisionItemForm)
-    #         return kwargs
 
     def form_valid(self, formset):
         """
@@ -461,7 +501,11 @@ class LoadMoreView(View):
             load_more_approved = request.GET.get('load_more_approved', False)
 
             provisions = Provision.objects.filter(returned=False)
-            is_admin = request.user.is_admin
+
+            if request.user.is_admin and self.request.GET.get('is_admin', False) == 'True':
+                is_admin = True
+            else:
+                is_admin = False
 
             if is_admin:
                 pending = provisions.filter(
@@ -591,39 +635,6 @@ class ItemAutocompleteView(autocomplete.Select2QuerySetView):
         return qs
 
 
-class ImageTestView(TemplateView):
-    template_name = 'image_test.html'
-
-
-class SwitchRoleView(RedirectView):
-    """View for logout"""
-
-    url = reverse_lazy('dashboard')
-    permanent = False
-    http_method_names = ['get', ]
-
-    def get(self, request, *args, **kwargs):
-        """Processing get request and switch the role"""
-        url = self.get_redirect_url(*args, **kwargs)
-        if request.user.is_authenticated():
-            if request.user.is_admin:
-                request.user.is_admin = False
-                request.switched = True
-                print 'user is admin ' + str(request.user.is_admin)
-
-            elif request.user.is_admin == False and request.switched == True:
-                request.user.is_admin = True
-                request.switched = False
-
-            else:
-                raise Http404()
-
-        else:
-            return HttpResponseRedirect(reverse_lazy('login'))
-
-        return HttpResponseRedirect(url)
-
-
 class ReportView(TemplateView):
     template_name = 'report.html'
 
@@ -700,25 +711,12 @@ class ReportAjaxView(View):
 
         csv = request.POST.get('csv')
 
-        # Generating a temporary file for attaching in the mail
-        filename = '/tmp/Report.csv'
-        temp = open(filename, 'w+b')
-        try:
-            # Writing csv data to file
-            temp.write(csv)
-            temp.close()
-            temp = open(filename, 'r')
-
-            # Sending mail with attachment
-            mail = EmailMessage(
-                    subject='Report',
-                    body='Report attached',
-                    to=[str(request.user.email)],
-                )
-            mail.attach('Report.csv', temp.read(), 'text/csv')
-            mail.send()
-        finally:
-            os.remove(filename)
+        if csv:
+            data = {
+                'csv': csv,
+                'user': request.user.email
+            }
+            send_report.delay(data)
 
         resp = {
             'success': 'True'

@@ -28,7 +28,9 @@
             </tr>
         {% endfor %}
     </table>
+    {% if pending_more %}
     <a href="#" id="load_more_pending" action="{% url 'load_more_ajax' %}">Load More</a>
+    {% endif %}
 </div>
 <div class="table-container">
     <h1>Approved Requests</h1>
@@ -81,7 +83,9 @@
             </tr>
         {% endfor %}
     </table>
+    {% if approved_more %}
     <a href="#" id="load_more_approved" action="{% url 'load_more_ajax' %}">Load More</a>
+    {% endif %}
 </div>
 
     <script>

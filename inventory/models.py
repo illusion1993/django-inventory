@@ -41,14 +41,22 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         """Create a user"""
 
-        return self._create_user(email, password,
-                                 False, **extra_fields)
+        return self._create_user(
+            email,
+            password,
+            False,
+            **extra_fields
+        )
 
     def create_superuser(self, email, password, **extra_fields):
         """Create a superuser"""
 
-        return self._create_user(email, password,
-                                 True, **extra_fields)
+        return self._create_user(
+            email,
+            password,
+            True,
+            **extra_fields
+        )
 
 
 def get_image_path(instance, filename):
@@ -140,6 +148,7 @@ class User(AbstractBaseUser):
         return self.first_name
 
     def delete_image(self):
+        """delete profile image from file system"""
         try:
             os.remove(self.image.path)
         except:
@@ -207,7 +216,3 @@ class Provision(models.Model):
     request_by_user = models.BooleanField(
         default=False
     )
-
-    # def __unicode__(self):
-    #     """unicode method"""
-    #     return self.user.email

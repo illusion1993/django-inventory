@@ -6,7 +6,8 @@ $('#load_more_pending').click(function (event){
             url: url,
             type: "GET",
             data: {
-                load_more_pending: 'True'
+                load_more_pending: 'True',
+                is_admin: is_admin
             },
             success: function(data, textStatus, jqXHR){
                 var html_output = '';
@@ -33,7 +34,8 @@ $('#load_more_approved').click(function (event){
             url: url,
             type: "GET",
             data: {
-                load_more_approved: 'True'
+                load_more_approved: 'True',
+                is_admin: is_admin
             },
             success: function(data, textStatus, jqXHR){
                 var html_output = '';

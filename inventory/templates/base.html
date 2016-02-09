@@ -8,6 +8,7 @@
         <script src="{% static 'js/jquery.min.js' %}"></script>
         <script src="{% static 'js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+        <script src="{% static 'js/pace.min.js' %}"></script>
     </head>
     <body>
 
@@ -38,6 +39,7 @@
             {% if request.user.is_authenticated %}
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'dashboard' %}?user=True">User Role</a></li>
                 <li><a href="{% url 'items_list' %}">Items</a></li>
                 <li><a href="{% url 'profile' %}">Profile</a></li>
 

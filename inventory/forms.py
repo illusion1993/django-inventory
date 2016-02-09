@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
+from django.db import transaction
 from inventory.message_constants import *
 
 from inventory.models import User, Item, Provision
@@ -41,6 +42,17 @@ class CustomUserChangeForm(UserChangeForm):
             'is_admin',
             'image',
         )
+
+
+# Login Form
+class LoginForm(forms.Form):
+    """
+    Login Form
+    """
+
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+    remember = forms.BooleanField(required=False)
 
 
 # Forms for inventory admins
@@ -133,7 +145,7 @@ class ProvisionItemForm(forms.ModelForm):
         required=False,
         widget=DateTimeWidget(
             attrs={'class': "return-by"},
-            usel10n = True,
+            usel10n=True,
             bootstrap_version=3
         )
     )
@@ -202,6 +214,7 @@ class ProvisionItemForm(forms.ModelForm):
 
         return return_by
 
+    @transaction.atomic
     def save(self, commit=True):
         """Send mail and save new provision object"""
         self.instance.approved = True
@@ -245,7 +258,7 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         required=False,
         widget=DateTimeWidget(
             attrs={'class': "return-by"},
-            usel10n = True,
+            usel10n=True,
             bootstrap_version=3
         )
     )
@@ -259,6 +272,7 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         self.fields['quantity'].widget.attrs['class'] = 'form-control'
         self.fields['return_by'].widget.attrs['class'] = 'form-control return-by'
 
+    @transaction.atomic
     def save(self, commit=True):
         """Save method marks a provision request approved, adds other info"""
         self.instance.approved = True
@@ -316,6 +330,7 @@ class RequestItemForm(forms.ModelForm):
 class ReturnItemForm(forms.ModelForm):
     """Form to return an item"""
 
+    @transaction.atomic
     def save(self, commit=True):
         """Marking as returned, incrementing item quantity, sending mail"""
         self.instance.returned = True

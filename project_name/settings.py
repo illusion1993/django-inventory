@@ -175,11 +175,12 @@ DJANGO_APPS = (
 
 THIRD_PARTY_APPS = (
     # Static file management:
+    'celery',
     'compressor',
     'inventory',
     'datetimewidget',
     'dal',
-    'dal_select2'
+    'dal_select2',
 )
 
 LOCAL_APPS = (
@@ -211,16 +212,6 @@ CACHES = {
 # DEFAULT_FROM_EMAIL = 'webmaster.default@example.com'
 #
 # EMAIL_USE_TLS = True
-########## END EMAIL CONFIGURATION
-
-########## EMAIL CONFIGURATION
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_PORT = 587
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'django.inventory@gmail.com'
-EMAIL_HOST_PASSWORD = 'inventoryjtg'
-DEFAULT_FROM_EMAIL = 'Django Inventory App <django.inventory@gmail.com>'
-EMAIL_USE_TLS = True
 ########## END EMAIL CONFIGURATION
 
 
@@ -282,3 +273,11 @@ TEMPLATE_DEBUG = DEBUG
 COMPRESS_URL = STATIC_URL
 
 AUTH_USER_MODEL = 'inventory.User'
+
+# CELERY STUFF
+BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
