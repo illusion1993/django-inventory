@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
 from inventory.views import (
-    LoginView,
     DashboardView,
     LogoutView,
     ProfileView,
@@ -19,11 +18,11 @@ from inventory.views import (
     ProvisionByRequestView,
     EditItemListView,
     LoadMoreView, ImageUploadView, UserAutocompleteView,
-    ItemAutocompleteView, ReportView, ReportAjaxView)
+    ItemAutocompleteView, ReportView, ReportAjaxView, LoginFormView)
 from inventory.decorators import (
     admin_required,
     user_required,
-)
+    anonymous_required)
 
 
 urlpatterns = patterns(
@@ -37,7 +36,10 @@ urlpatterns = patterns(
     ),
     url(
         r'^login/$',
-        LoginView.as_view(),
+        anonymous_required(
+            LoginFormView.as_view(),
+            redirect_to='dashboard'
+        ),
         name="login"
     ),
     url(

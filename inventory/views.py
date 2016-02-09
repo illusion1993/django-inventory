@@ -11,7 +11,6 @@ from django.http import (
     JsonResponse
 )
 from django.shortcuts import get_object_or_404
-from django.template.response import TemplateResponse
 from django.views.generic import (
     View,
     RedirectView,
@@ -22,7 +21,6 @@ from django.views.generic import (
     TemplateView,
     FormView
 )
-from inventory.decorators import check_already_logged
 
 from inventory.models import (
     Provision,
@@ -38,76 +36,74 @@ from inventory.forms import (
     ProvisionItemByRequestForm,
     ReturnItemForm,
     ImageUploadForm,
-    DateFilterForm
-)
+    DateFilterForm,
+    LoginForm)
 from inventory.message_constants import *
 from inventory.tasks import send_report
 
 from dal import autocomplete
 
 
-class LoginView(View):
+class LoginFormView(FormView):
     """
     View for login page
     """
 
-    @check_already_logged
-    def get(self, request):
-        """
-        Get method for login page
-        """
+    form_class = LoginForm
+    template_name = 'login.html'
+    success_url = reverse_lazy('dashboard')
 
-        # If next parameter is sent in GET request,
-        # Pass LOGIN_REQUIRED_MESSAGE
-        if request.GET.get('next'):
-            messages.warning(request, LOGIN_REQUIRED_MESSAGE)
-
-        # Return login template
-        return TemplateResponse(request, 'login.html')
-
-    def post(self, request):
+    def form_valid(self, form):
         """
-        Post method for login page
+        If for is valid, authenticate user
         """
-
         # Initialize credentials for authentication
-        email = request.POST.get('email', False)
-        password = request.POST.get('password', False)
-        remember = request.POST.get('remember', False)
+        email = form.cleaned_data['email']
+        password = form.cleaned_data['password']
+        remember = form.cleaned_data['remember']
 
-        if email and password:
-            user = auth.authenticate(email=email, password=password)
+        # Authenticate user
+        user = auth.authenticate(email=email, password=password)
 
+        # If authentication passed, send to dashboard
         if user:
-            auth.login(request, user)
-            messages.success(request, LOGIN_SUCCESS_MESSAGE)
+            auth.login(self.request, user)
+            messages.success(self.request, LOGIN_SUCCESS_MESSAGE)
 
             if not remember:
                 self.request.session.set_expiry(0)
 
-            if request.GET.get('next'):
-                return HttpResponseRedirect(request.GET['next'])
+            if self.request.GET.get('next'):
+                return HttpResponseRedirect(self.request.GET['next'])
             else:
-                return HttpResponseRedirect(reverse_lazy('dashboard'))
+                return super(LoginFormView, self).form_valid(form)
         else:
-            messages.warning(request, LOGIN_INVALID_MESSAGE)
-            return TemplateResponse(
-                request, 'login.html', {'email': email})
+            messages.warning(self.request, LOGIN_INVALID_MESSAGE)
+            return super(LoginFormView, self).form_invalid(form)
 
 
 class LogoutView(RedirectView):
-    """View for logout"""
+    """
+    View for logout
+    """
 
     url = reverse_lazy('login')
     permanent = False
     http_method_names = ['get', ]
 
     def get(self, request, *args, **kwargs):
-        """Processing get request to log a user out"""
+        """
+        Processing get request to log a user out
+        """
+
         url = self.get_redirect_url(*args, **kwargs)
+
+        # If user was authenticated, log out
         if request.user.is_authenticated():
             auth.logout(request)
             messages.success(request, LOGOUT_SUCCESS_MESSAGE)
+
+        # Else raise 404 for anonymous users
         else:
             raise Http404()
 
@@ -115,19 +111,28 @@ class LogoutView(RedirectView):
 
 
 class DashboardView(TemplateView):
-    """View for dashboard page"""
+    """
+    View for dashboard page
+    """
 
     template_name = 'dashboard.html'
 
     def get_context_data(self, **kwargs):
-        """Fetching pending and approved requests for context"""
+        """
+        Fetching pending and approved requests for context
+        """
+
         user = self.request.user
         provisions = Provision.objects.filter(returned=False)
         is_admin = user.is_admin
         is_user = user.is_authenticated() and not user.is_admin
+
+        # Assign admin the role of user, if requested
         if user.is_admin and self.request.GET.get('user', False):
             is_admin = False
             is_user = True
+
+        # Store role variables for context
         context = {
             'is_admin': is_admin,
             'is_user': is_user
@@ -175,42 +180,61 @@ class DashboardView(TemplateView):
 
 
 class ProfileView(DetailView):
-    """View for profile page"""
+    """
+    View for profile page
+    """
 
     model = User
     template_name = 'profile.html'
 
     def get_object(self, queryset=None):
-        """Fetching user profile for viewing"""
+        """
+        Fetching user profile for viewing
+        """
+
         obj = User.objects.get(id=self.request.user.id)
         return obj
 
 
 class EditProfileView(FormView):
-    """View for profile update page"""
+    """
+    View for profile update page
+    """
 
     template_name = 'edit_profile.html'
     form_class = EditProfileForm
     success_url = reverse_lazy('profile')
 
     def get_form(self, form_class):
-        """Load the form with the instance of user model object"""
+        """
+        Load the form with the instance of user model object
+        """
+
         ins = User.objects.get(id=self.request.user.id)
         return form_class(instance=ins, **self.get_form_kwargs())
 
     def form_valid(self, form):
-        """If the form is valid, save the object in db"""
+        """
+        If the form is valid, save the object in db
+        """
+
         form.save()
         return super(EditProfileView, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
-        """Save both the forms in context"""
+        """
+        Save both the forms in context
+        """
+
         if 'form2' not in kwargs:
             kwargs['form2'] = PasswordChangeForm(user=self.request.user)
             return super(EditProfileView, self).get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
-        """Checking if password form is submitted"""
+        """
+        Checking if password form is submitted
+        """
+
         password_form_submitted = request.POST.get('change_password', False)
 
         if password_form_submitted:
@@ -260,7 +284,9 @@ class EditProfileView(FormView):
 
 
 class ItemsListView(ListView):
-    """View for list of items"""
+    """
+    View for list of items
+    """
 
     model = Item
     context_object_name = 'item_list'
@@ -268,7 +294,9 @@ class ItemsListView(ListView):
 
 
 class AddItemView(CreateView):
-    """View for creating new item"""
+    """
+    View for creating new item
+    """
 
     model = Item
     form_class = AddItemForm
@@ -286,7 +314,9 @@ class AddItemView(CreateView):
 
 
 class EditItemListView(ListView):
-    """View for list of items to edit from"""
+    """
+    View for list of items to edit from
+    """
 
     model = Item
     context_object_name = 'item_list'
@@ -691,5 +721,3 @@ class ReportAjaxView(View):
         }
 
         return JsonResponse(resp)
-
-
