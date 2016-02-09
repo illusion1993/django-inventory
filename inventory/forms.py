@@ -44,6 +44,17 @@ class CustomUserChangeForm(UserChangeForm):
         )
 
 
+# Login Form
+class LoginForm(forms.Form):
+    """
+    Login Form
+    """
+
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+    remember = forms.BooleanField(required=False)
+
+
 # Forms for inventory admins
 class EditProfileForm(forms.ModelForm):
     """Form to update profile"""
@@ -134,7 +145,7 @@ class ProvisionItemForm(forms.ModelForm):
         required=False,
         widget=DateTimeWidget(
             attrs={'class': "return-by"},
-            usel10n = True,
+            usel10n=True,
             bootstrap_version=3
         )
     )
@@ -247,7 +258,7 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         required=False,
         widget=DateTimeWidget(
             attrs={'class': "return-by"},
-            usel10n = True,
+            usel10n=True,
             bootstrap_version=3
         )
     )
