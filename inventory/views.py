@@ -1,14 +1,15 @@
 """Inventory app views"""
 from datetime import datetime
-import os
-import tempfile
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
-from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse_lazy
 from django.forms import formset_factory
-from django.http import HttpResponseRedirect, Http404, JsonResponse
+from django.http import (
+    HttpResponseRedirect,
+    Http404,
+    JsonResponse
+)
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.views.generic import (
@@ -18,70 +19,80 @@ from django.views.generic import (
     UpdateView,
     CreateView,
     ListView,
-    TemplateView, FormView)
+    TemplateView,
+    FormView
+)
+from inventory.decorators import check_already_logged
 
 from inventory.models import (
     Provision,
     Item,
-    User)
+    User
+)
 from inventory.forms import (
     EditProfileForm,
     AddItemForm,
     EditItemForm,
     RequestItemForm,
     ProvisionItemForm,
-    ProvisionItemByRequestForm, ReturnItemForm, ImageUploadForm, DateFilterForm)
+    ProvisionItemByRequestForm,
+    ReturnItemForm,
+    ImageUploadForm,
+    DateFilterForm
+)
 from inventory.message_constants import *
 from inventory.tasks import send_report
 
 from dal import autocomplete
-from inventory.signals import send_mail_signal
-
-from celery.task import task
 
 
 class LoginView(View):
-    """View for login page"""
+    """
+    View for login page
+    """
 
+    @check_already_logged
     def get(self, request):
-        """Get method for login page"""
-        if request.user.is_authenticated():
-            messages.warning(request, ALREADY_LOGGED_MESSAGE)
-            return HttpResponseRedirect(reverse_lazy('dashboard'))
+        """
+        Get method for login page
+        """
 
-        else:
-            if request.GET.get('next'):
-                messages.warning(request, LOGIN_REQUIRED_MESSAGE)
+        # If next parameter is sent in GET request,
+        # Pass LOGIN_REQUIRED_MESSAGE
+        if request.GET.get('next'):
+            messages.warning(request, LOGIN_REQUIRED_MESSAGE)
 
-            return TemplateResponse(request, 'login.html')
+        # Return login template
+        return TemplateResponse(request, 'login.html')
 
     def post(self, request):
-        """Post method for login page"""
-        if request.user.is_authenticated():
-            messages.warning(request, ALREADY_LOGGED_MESSAGE)
-            return HttpResponseRedirect(reverse_lazy('dashboard'))
+        """
+        Post method for login page
+        """
 
-        else:
-            email = request.POST['email']
-            password = request.POST['password']
-            remember = request.POST.get('remember', False)
+        # Initialize credentials for authentication
+        email = request.POST.get('email', False)
+        password = request.POST.get('password', False)
+        remember = request.POST.get('remember', False)
+
+        if email and password:
             user = auth.authenticate(email=email, password=password)
 
-            if user:
-                auth.login(request, user)
-                messages.success(request, LOGIN_SUCCESS_MESSAGE)
+        if user:
+            auth.login(request, user)
+            messages.success(request, LOGIN_SUCCESS_MESSAGE)
 
-                if not remember:
-                    self.request.session.set_expiry(0)
+            if not remember:
+                self.request.session.set_expiry(0)
 
-                if request.GET.get('next'):
-                    return HttpResponseRedirect(request.GET['next'])
-                else:
-                    return HttpResponseRedirect(reverse_lazy('dashboard'))
+            if request.GET.get('next'):
+                return HttpResponseRedirect(request.GET['next'])
             else:
-                messages.warning(request, LOGIN_INVALID_MESSAGE)
-                return TemplateResponse(
-                    request, 'login.html', {'email': email})
+                return HttpResponseRedirect(reverse_lazy('dashboard'))
+        else:
+            messages.warning(request, LOGIN_INVALID_MESSAGE)
+            return TemplateResponse(
+                request, 'login.html', {'email': email})
 
 
 class LogoutView(RedirectView):
