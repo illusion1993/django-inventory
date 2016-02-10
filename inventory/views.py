@@ -569,10 +569,12 @@ class LoadMoreView(View):
 
 
 class ImageUploadView(UpdateView):
+    """View to process image upload via AJAX"""
     model = User
     form_class = ImageUploadForm
 
     def get_object(self, queryset=None):
+        """Get user model obj"""
         obj = User.objects.get(id=self.request.user.id)
         return obj
 
