@@ -29,10 +29,14 @@
                         {{ form.return_by.errors }}
                         {{ form.return_by }}
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="{{ form.quantity.id_for_label }}">Quantity</label>
                         {{ form.quantity.errors }}
                         {{ form.quantity }}
+                    </div>
+                    <div class="col-md-1">
+                        <label for="">&nbsp;</label>
+                        <a href="#" class="btn btn-danger remove-provision-form">x</a>
                     </div>
                 </div>
             {% endfor %}
@@ -58,10 +62,14 @@
                     {{ formset.empty_form.return_by.errors }}
                     {{ formset.empty_form.return_by }}
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="{{ formset.empty_form.quantity.id_for_label }}">Quantity</label>
                     {{ formset.empty_form.quantity.errors }}
                     {{ formset.empty_form.quantity }}
+                </div>
+                <div class="col-md-1">
+                    <label for="">&nbsp;</label>
+                    <a href="#" class="btn btn-danger remove-provision-form">x</a>
                 </div>
             </div>
         </div>
