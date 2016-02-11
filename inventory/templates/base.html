@@ -37,20 +37,56 @@
                 <a class="navbar-brand" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">Inventory Management</a>
             </div>
             {% if request.user.is_authenticated %}
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                <li><a href="{% url 'dashboard' %}?user=True">User Role</a></li>
-                <li><a href="{% url 'items_list' %}">Items</a></li>
-                <li><a href="{% url 'profile' %}">Profile</a></li>
 
-                {% if request.user.is_admin %}
-                <li><a href="{% url 'add_item' %}">Create Item</a></li>
-                <li><a href="{% url 'edit_item_list' %}">Edit Item</a></li>
-                <li><a href="{% url 'provision_item' %}">Provision Item</a></li>
-                <li><a href="{% url 'provision_list' %}">Return Item</a></li>
-                <li><a href="{% url 'report' %}">Report</a></li>
+            <ul class="nav navbar-nav navbar-right">
+                {% if not request.user.is_admin %}
+                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li><a href="{% url 'items_list' %}">Items List</a></li>
+                    <li><a href="{% url 'request_item' %}">Request Item</a></li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Profile
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'profile' %}">View Profile</a></li>
+                            <li><a href="{% url 'edit_profile' %}">Edit Profile</a></li>
+                        </ul>
+                    </li>
                 {% else %}
-                <li><a href="{% url 'request_item' %}">Request Item</a></li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Dashboard
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                          <li><a href="{% url 'dashboard' %}">Admin Dashboard</a></li>
+                          <li><a href="{% url 'dashboard' %}?user=True">User Dashboard</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Manage Items
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'items_list' %}">Items List</a></li>
+                            <li><a href="{% url 'add_item' %}">Create Item</a></li>
+                            <li><a href="{% url 'edit_item_list' %}">Edit Item</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Manage Provisions
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'provision_item' %}">Provision Item</a></li>
+                            <li><a href="{% url 'provision_list' %}">Return Item</a></li>
+                            <li><a href="{% url 'request_item' %}">Request Item</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Profile
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'profile' %}">View Profile</a></li>
+                            <li><a href="{% url 'edit_profile' %}">Edit Profile</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="{% url 'report' %}">Report</a></li>
                 {% endif %}
                 <li><a href="{% url 'logout' %}">Logout</a></li>
             </ul>
