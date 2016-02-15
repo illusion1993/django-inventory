@@ -4,6 +4,7 @@ from datetime import datetime
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.urlresolvers import reverse_lazy
+from django.db.models import Sum
 from django.forms import formset_factory
 from django.http import (
     HttpResponseRedirect,
@@ -681,16 +682,18 @@ class ReportAjaxView(View):
             data = []
 
             for item in items:
+                provisions_for_item = provisions.filter(item=item)
                 row = []
                 row.append(item.name)
                 row.append(item.description)
+
                 if item.returnable:
                     row.append('Yes')
+
                 else:
                     row.append('No')
-                count = 0
-                for provision in provisions.filter(item=item):
-                    count += provision.quantity
+
+                count = provisions_for_item.aggregate(Sum('quantity'))
                 row.append(count)
                 if count:
                     data.append(row)
