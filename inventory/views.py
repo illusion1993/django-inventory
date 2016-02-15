@@ -1,6 +1,5 @@
 """Inventory app views"""
 from datetime import datetime
-import os
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
@@ -12,7 +11,6 @@ from django.http import (
     JsonResponse
 )
 from django.shortcuts import get_object_or_404
-from django.template.response import TemplateResponse
 from django.views.generic import (
     View,
     RedirectView,
