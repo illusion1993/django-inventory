@@ -1,5 +1,7 @@
 """Inventory app views"""
+import csv
 from datetime import datetime
+import json
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
@@ -657,6 +659,7 @@ class ReportAjaxView(View):
             non_returnable = request.GET.get('nr', True)
             start_date = request.GET.get('sd', '')
             end_date = request.GET.get('ed', '')
+            mail_me = request.GET.get('mm', False)
 
             # Storing all the item and provision objects
             items = Item.objects.all()
@@ -683,18 +686,18 @@ class ReportAjaxView(View):
 
             for item in items:
                 provisions_for_item = provisions.filter(item=item)
-                row = []
-                row.append(item.name)
-                row.append(item.description)
+                row = {}
+                row['name'] = (item.name)
+                row['description'] = (item.description)
 
                 if item.returnable:
-                    row.append('Yes')
+                    row['returnable'] = 'Yes'
 
                 else:
-                    row.append('No')
+                    row['returnable'] = 'No'
 
                 count = provisions_for_item.aggregate(Sum('quantity')).get('quantity__sum')
-                row.append(count)
+                row['quantity'] = count
                 if count:
                     data.append(row)
 
@@ -712,17 +715,23 @@ class ReportAjaxView(View):
 
     def post(self, request):
 
-        csv = request.POST.get('csv')
+        if request.is_ajax():
+            csv = request.POST.get('csv', '')
 
-        if csv:
-            data = {
-                'csv': csv,
-                'user': request.user.email
-            }
-            send_report.delay(data)
+            if csv != '':
+                csv = {'csv': json.loads(csv)}
+                send_report.delay(csv, request.user.email)
 
-        resp = {
-            'success': 'True'
-        }
+                resp = {
+                    'message': 'Mail sent'
+                }
 
-        return JsonResponse(resp)
+            else:
+                resp = {
+                    'message': 'No data to send'
+                }
+
+            return JsonResponse(resp)
+
+        else:
+            raise Http404()

@@ -34,10 +34,17 @@
     <div class="navbar navbar-fixed-top navbar-inverse">
         <div class="container">
             <div class="navbar-header">
-                <a class="navbar-brand" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">Inventory Management</a>
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">Inventory Management</a>
             </div>
+
             {% if request.user.is_authenticated %}
 
+            <div class="collapse navbar-collapse" id="navbar">
             <ul class="nav navbar-nav navbar-right">
                 {% if not request.user.is_admin %}
                     <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
@@ -90,6 +97,7 @@
                 {% endif %}
                 <li><a href="{% url 'logout' %}">Logout</a></li>
             </ul>
+            </div>
             {% endif %}
         </div>
     </div> {# end Navigation #}

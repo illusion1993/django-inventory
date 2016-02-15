@@ -65,73 +65,88 @@
     </script>
 
     <script type="text/javascript">
-    var table;
-    $(document).ready(function() {
-        table = $('#example').DataTable( {
-                    "ajax": "{% url 'report_ajax' %}"
-                });
-    });
-
-    $('.filter-handle').change(function(){
-        var returnable = $('#returnable-filter').is(':checked'),
-                non_returnable = $('#non-returnable-filter').is(':checked'),
-                start_date = $('input#start-date-filter').val(),
-                end_date = $('input#end-date-filter').val(),
-                url = "{% url 'report_ajax' %}";
-
-        table.clear()
-        table.destroy();
-
-        table = $('#example').DataTable( {
-                    "ajax": "{% url 'report_ajax' %}?r=" + returnable + "&&nr=" + non_returnable + "&&sd=" + start_date + "&&ed=" + end_date
-                });
-    });
-
-    $('#mail_me').click(function(){
-        var button = $(this);
-        button.prop('disabled', true);
-        var data = table.rows({
-                    order: 'current',
-                    search: 'applied'
-                }).data(),
-            csv = '';
-
-        var heads = $('#example thead tr th');
-
-        heads.each(function(key, value){
-            csv += value.innerHTML;
-            csv += ',';
-        })
-        csv = csv.substring(0, csv.length-1);
-        csv += '\n';
-
-        data.each(function(value){
-            csv += value;
-            csv += '\n';
+        var table;
+        $(document).ready(function() {
+            table = $('#example').DataTable( {
+                        "ajax": "{% url 'report_ajax' %}",
+                        "columns": [
+                            {"data": "name"},
+                            {"data": "description", "sortable": false},
+                            {"data": "returnable", "sortable": false, "searchable": false},
+                            {"data": "quantity", "searchable": false}
+                        ]
+                    });
         });
 
-        var formData = new FormData();
-        formData.append('csv', csv);
-        formData.append('csrfmiddlewaretoken', csrf);
+        $('.filter-handle').change(function(){
+            var returnable = $('#returnable-filter').is(':checked'),
+                    non_returnable = $('#non-returnable-filter').is(':checked'),
+                    start_date = $('input#start-date-filter').val(),
+                    end_date = $('input#end-date-filter').val(),
+                    url = "{% url 'report_ajax' %}";
 
-        $.ajax({
-                url:'{% url 'report_ajax' %}',
-                cache: false,
-                contentType: false,
-                processData: false,
-                type: "POST",
-                data: formData,
+            table.clear()
+            table.destroy();
 
-                success: function(data, textStatus, jqXHR){
-                    if(data['success']=='True')
-                        alert('Mail sent');
-                    else
-                        alert('Failed to send mail');
+            table = $('#example').DataTable( {
+                        "ajax": "{% url 'report_ajax' %}?r=" + returnable + "&&nr=" + non_returnable + "&&sd=" + start_date + "&&ed=" + end_date,
+                        "columns": [
+                            {"data": "name"},
+                            {"data": "description", "sortable": false},
+                            {"data": "returnable", "sortable": false, "searchable": false},
+                            {"data": "quantity", "searchable": false}
+                        ]
+                    });
+        });
 
-                    button.prop('disabled', false);
-                }
-        })
-    });
+        $('#mail_me').click(function(){
+            var button = $(this);
+            button.prop('disabled', true);
+            var data = $('#example').DataTable().rows({
+                        order: 'current',
+                        search: 'applied'
+                    }).data(),
+                csv = [];
+
+            $.each(data, function(key, value){
+                csv.push({
+                    'name': value.name,
+                    'description': value.description,
+                    'returnable': value.returnable,
+                    'quantity': value.quantity
+                })
+            });
+
+            console.log(csv);
+
+            if(csv == ''){
+                alert('No data to send');
+                button.prop('disabled', false);
+            }
+
+            else{
+                csv = JSON.stringify(csv);
+
+                var formData = new FormData();
+                formData.append('csv', csv);
+                formData.append('csrfmiddlewaretoken', csrf);
+
+                $.ajax({
+                        url:'{% url 'report_ajax' %}',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        type: "POST",
+                        data: formData,
+
+                        success: function(data, textStatus, jqXHR){
+                            alert(data['message']);
+
+                            button.prop('disabled', false);
+                        }
+                })
+            }
+        });
 
     </script>
 

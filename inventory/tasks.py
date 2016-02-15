@@ -1,27 +1,23 @@
-import os
+import StringIO
+import csv
 from celery.task import task
 from django.core.mail import EmailMessage
 
 
 @task(name="send_report_mail")
-def send_report(data):
+def send_report(data, email):
 
-    # Generating a temporary file for attaching in the mail
-    filename = '/tmp/Report.csv'
-    temp = open(filename, 'w+b')
-    try:
-        # Writing csv data to file
-        temp.write(data['csv'])
-        temp.close()
-        temp = open(filename, 'r')
+    attachment_file = StringIO.StringIO()
+    data = data['csv']
+    writer = csv.DictWriter(attachment_file, data[0].keys())
+    writer.writeheader()
+    writer.writerows(data)
 
-        # Sending mail with attachment
-        mail = EmailMessage(
-                subject='Report',
-                body='Report attached',
-                to=[data['user'], 'vikram.rathore@joshtechnologygroup.com'],
-            )
-        mail.attach('Report.csv', temp.read(), 'text/csv')
-        mail.send()
-    finally:
-        os.remove(filename)
+    # Sending mail with attachment
+    mail = EmailMessage(
+        subject='Report',
+        body='Report attached',
+        to=[email],
+    )
+    mail.attach('Report.csv', attachment_file.getvalue(), 'text/csv')
+    mail.send()
