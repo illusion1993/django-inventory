@@ -52,11 +52,7 @@
                 <td>{{ req.item.name }}</td>
                 <td>{{ req.item.description|truncatechars:100 }}</td>
                 <td>
-                    {% if req.item.returnable %}
-                        Yes
-                    {% else %}
-                        No
-                    {% endif %}
+                    {{ req.item.returnable|yesno:"Yes,No,Maybe" }}
                 </td>
                 <td>
                     {% if req.item.returnable %}
