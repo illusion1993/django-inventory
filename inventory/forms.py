@@ -10,7 +10,7 @@ from inventory.message_constants import *
 from inventory.models import User, Item, Provision
 from inventory.signals import send_mail_signal
 
-from datetimewidget.widgets import DateTimeWidget
+from datetimewidget.widgets import DateTimeWidget, DateWidget
 
 from dal import autocomplete
 
@@ -60,6 +60,18 @@ class LoginForm(forms.Form):
 class EditProfileForm(forms.ModelForm):
     """Form to update profile"""
 
+    def clean_first_name(self):
+        """Trim first name and make first letter uppercase"""
+        return self.cleaned_data['first_name'].strip().title()
+
+    def clean_last_name(self):
+        """Trim Last name and make first letter uppercase"""
+        return self.cleaned_data['last_name'].strip().title()
+
+    def clean_id_number(self):
+        """Trim id number"""
+        return self.cleaned_data['id_number'].strip()
+
     class Meta:
         """Meta Class"""
         model = User
@@ -86,6 +98,10 @@ class AddItemForm(forms.ModelForm):
         instance = super(AddItemForm, self).save(commit=True)
         send_mail_signal.send(sender=Item, mail_data=new_mail, recipients=recipients, cc_to=[])
         return instance
+
+    def clean_name(self):
+        """Trim item name"""
+        return self.cleaned_data['name'].strip()
 
     def clean_quantity(self):
         quantity = self.cleaned_data['quantity']
@@ -119,6 +135,10 @@ class EditItemForm(forms.ModelForm):
         send_mail_signal.send(sender=Item, mail_data=new_mail, recipients=recipients, cc_to=[])
         return instance
 
+    def clean_name(self):
+        """Trim item name"""
+        return self.cleaned_data['name'].strip()
+
     def clean_quantity(self):
         quantity = self.cleaned_data['quantity']
 
@@ -139,15 +159,16 @@ class EditItemForm(forms.ModelForm):
 
 
 class ProvisionItemForm(forms.ModelForm):
-    """Form to create new user"""
+    """Form to Provision an item"""
 
     quantity = forms.IntegerField(required=False)
     return_by = forms.DateTimeField(
         required=False,
-        widget=DateTimeWidget(
+        widget=DateWidget(
             attrs={'class': "return-by"},
             usel10n=True,
-            bootstrap_version=3
+            bootstrap_version=3,
+            options={'format': 'dd/mm/yyyy'}
         )
     )
 
@@ -206,7 +227,7 @@ class ProvisionItemForm(forms.ModelForm):
 
             if return_by <= datetime.now():
                 raise forms.ValidationError(
-                    "Return by date and time should not be in past"
+                    "Return by date should be in future"
                 )
 
         else:
@@ -288,10 +309,11 @@ class ProvisionItemByRequestForm(forms.ModelForm):
     quantity = forms.IntegerField(required=False)
     return_by = forms.DateTimeField(
         required=False,
-        widget=DateTimeWidget(
+        widget=DateWidget(
             attrs={'class': "return-by"},
             usel10n=True,
-            bootstrap_version=3
+            bootstrap_version=3,
+            options={'format': 'dd/mm/yyyy'}
         )
     )
 
@@ -303,6 +325,56 @@ class ProvisionItemByRequestForm(forms.ModelForm):
         self.fields['item'].widget.attrs['class'] = 'form-control'
         self.fields['quantity'].widget.attrs['class'] = 'form-control'
         self.fields['return_by'].widget.attrs['class'] = 'form-control return-by'
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data['quantity']
+
+        if 'item' in self.cleaned_data.keys():
+            item = self.cleaned_data['item']
+            q_max = item.quantity
+
+            if not quantity:
+                quantity = 1
+                self.cleaned_data['quantity'] = quantity
+
+            if quantity <= 0:
+                raise forms.ValidationError(
+                    "Please enter a valid quantity"
+                )
+            if quantity > q_max:
+                raise forms.ValidationError(
+                    "Only {0} items are available in inventory".format(q_max)
+                )
+        else:
+            raise forms.ValidationError(
+                "No item selected"
+            )
+
+        return quantity
+
+    def clean_return_by(self):
+        return_by = self.cleaned_data['return_by']
+
+        if 'item' in self.cleaned_data.keys():
+            item = self.cleaned_data['item']
+
+            if not item.returnable:
+                return None
+
+            if not return_by:
+                return_by = datetime.now() + timedelta(days=7)
+
+            if return_by <= datetime.now():
+                raise forms.ValidationError(
+                    "Return by date should be in future"
+                )
+
+        else:
+            raise forms.ValidationError(
+                "No item selected"
+            )
+
+        return return_by
 
     @transaction.atomic
     def save(self, commit=True):
@@ -396,23 +468,30 @@ class ImageUploadForm(forms.ModelForm):
 
 
 class DateFilterForm(forms.Form):
+    """A form to display as filters on report page"""
 
     start_date = forms.DateTimeField(
         required=False,
-        widget=DateTimeWidget(
+        widget=DateWidget(
             attrs={'class': "filter-handle",
                    'id': "start-date-filter"},
-            usel10n = True,
-            bootstrap_version=3
+            usel10n=True,
+            bootstrap_version=3,
+            options={
+                'endDate': '"' + str(datetime.now().date()) + '"'
+            }
         )
     )
 
     end_date = forms.DateTimeField(
         required=False,
-        widget=DateTimeWidget(
+        widget=DateWidget(
             attrs={'class': "filter-handle",
                    'id': "end-date-filter"},
-            usel10n = True,
-            bootstrap_version=3
+            usel10n=True,
+            bootstrap_version=3,
+            options={
+                'endDate': '"' + str((datetime.now() + timedelta(days=1)).date()) + '"'
+            }
         )
     )

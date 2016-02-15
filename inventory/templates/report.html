@@ -40,7 +40,7 @@
         </div>
     </div>
 
-    <table id="example" class="display" cellspacing="0" width="100%">
+    <table id="report-table" class="display" cellspacing="0" width="100%">
         <thead>
             <tr>
                 <th>Item Name</th>
@@ -67,7 +67,7 @@
     <script type="text/javascript">
         var table;
         $(document).ready(function() {
-            table = $('#example').DataTable( {
+            table = $('#report-table').DataTable( {
                         "ajax": "{% url 'report_ajax' %}",
                         "columns": [
                             {"data": "name"},
@@ -85,10 +85,21 @@
                     end_date = $('input#end-date-filter').val(),
                     url = "{% url 'report_ajax' %}";
 
-            table.clear()
+            var sd = Date.parse(start_date);
+            var ed = Date.parse(end_date);
+
+            if(ed <= sd){
+                alert('Please select valid dates. Start date must be less than End date.');
+                start_date = '';
+                end_date = '';
+                $('input#start-date-filter').val('');
+                $('input#end-date-filter').val('');
+            }
+
+            table.clear();
             table.destroy();
 
-            table = $('#example').DataTable( {
+            table = $('#report-table').DataTable( {
                         "ajax": "{% url 'report_ajax' %}?r=" + returnable + "&&nr=" + non_returnable + "&&sd=" + start_date + "&&ed=" + end_date,
                         "columns": [
                             {"data": "name"},
@@ -102,7 +113,7 @@
         $('#mail_me').click(function(){
             var button = $(this);
             button.prop('disabled', true);
-            var data = $('#example').DataTable().rows({
+            var data = $('#report-table').DataTable().rows({
                         order: 'current',
                         search: 'applied'
                     }).data(),

@@ -8,14 +8,25 @@ from django.db import models
 
 
 # REGEX used
-NAME_REGEX = RegexValidator(
-    regex=r'^[a-zA-Z]+$',
-    message="Please enter a valid name"
+FIRST_NAME_REGEX = RegexValidator(
+    regex=r'^[A-Za-z]([a-zA-Z ,\'\.]*)$',
+    message="Invalid first name entered"
 )
-
+LAST_NAME_REGEX = RegexValidator(
+    regex=r'^[a-zA-Z]+$',
+    message="Invalid last name entered"
+)
 PHONE_REGEX = RegexValidator(
     regex=r'^\d{10,10}$',
     message="Please enter a valid phone number. Only 10 digits allowed."
+)
+ID_NUMBER_REGEX = RegexValidator(
+    regex=r'^[a-zA-Z0-9]*$',
+    message="Enter a valid id number. Only alphabets and digits allowed."
+)
+ITEM_NAME_REGEX = RegexValidator(
+    regex=r'^[A-Za-z]([a-zA-Z ,\'\.\/]*)$',
+    message="Invalid item name entered."
 )
 
 
@@ -81,13 +92,13 @@ class User(AbstractBaseUser):
     first_name = models.CharField(
         max_length=50,
         null=True,
-        validators=[NAME_REGEX]
+        validators=[FIRST_NAME_REGEX]
     )
 
     last_name = models.CharField(
         max_length=50,
         null=True,
-        validators=[NAME_REGEX]
+        validators=[LAST_NAME_REGEX]
     )
 
     phone = models.CharField(
@@ -101,6 +112,7 @@ class User(AbstractBaseUser):
 
     id_number = models.CharField(
         max_length=10,
+        validators=[ID_NUMBER_REGEX],
         null=True,
         unique=True
     )
@@ -160,7 +172,8 @@ class Item(models.Model):
 
     name = models.CharField(
         max_length=50,
-        unique=True
+        unique=True,
+        validators=[ITEM_NAME_REGEX]
     )
 
     description = models.TextField(

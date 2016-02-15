@@ -168,4 +168,4 @@ function reduce_form_number(elem){
             }
         }
     });
-};
+}

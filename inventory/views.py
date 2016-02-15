@@ -672,12 +672,12 @@ class ReportAjaxView(View):
             if non_returnable == 'true' and returnable == 'false':
                 items = items.filter(returnable=False)
             if not start_date == '':
-                start_date = datetime.strptime(str(start_date), '%Y-%m-%d %H:%M:%S')
+                start_date = datetime.strptime(str(start_date), '%Y-%m-%d')
                 for provision in provisions:
                     if provision.approved_on < start_date:
                         provisions = provisions.exclude(id=provision.id)
             if not end_date == '':
-                end_date = datetime.strptime(str(end_date), '%Y-%m-%d %H:%M:%S')
+                end_date = datetime.strptime(str(end_date), '%Y-%m-%d')
                 for provision in provisions:
                     if provision.approved_on > end_date:
                         provisions = provisions.exclude(id=provision.id)

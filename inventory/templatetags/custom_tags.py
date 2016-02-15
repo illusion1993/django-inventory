@@ -27,10 +27,19 @@ def active(context, *args):
     return ''
 
 
-@register.simple_tag(takes_context=False)
-def boolean_filter(handle, *args):
-    """Boolean filter to replace boolean values with words"""
-    if handle is True and len(args) == 2:
-        return args[0]
+@register.simple_tag(takes_context=True)
+def role_prefix(context, *args):
+    """Place an active class for navigation buttons on appropriate urls"""
+    user = context['request'].user
+    user_role = context['request'].GET.get('user', False)
+    path = context['request'].path
+
+    if path == reverse('dashboard'):
+        if user.is_admin and not user_role:
+            return args[0]
+
+        elif user.is_admin and user_role:
+            return args[1]
+
     else:
-        return args[1]
+        return ''

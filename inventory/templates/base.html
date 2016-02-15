@@ -69,7 +69,7 @@
                     </li>
                     {% else %}
                     <li class="dropdown {% active 'dashboard' %}">
-                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Dashboard
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">{% role_prefix 'Admin ' 'User ' %}Dashboard
                         <span class="caret"></span></a>
                         <ul class="dropdown-menu">
                           <li><a href="{% url 'dashboard' %}">Admin Dashboard</a></li>
