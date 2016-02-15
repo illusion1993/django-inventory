@@ -1,5 +1,4 @@
 """Inventory app views"""
-import csv
 from datetime import datetime
 import json
 
@@ -40,7 +39,9 @@ from inventory.forms import (
     ReturnItemForm,
     ImageUploadForm,
     DateFilterForm,
-    LoginForm)
+    LoginForm,
+    ProvisionFormset
+)
 from inventory.message_constants import *
 from inventory.tasks import send_report
 
@@ -433,13 +434,13 @@ class ProvisionItemView(FormView):
 
     def get(self, request, *args, **kwargs):
         context = {
-            'formset': formset_factory(ProvisionItemForm, extra=1)
+            'formset': formset_factory(ProvisionItemForm, formset=ProvisionFormset, extra=1)
         }
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        ProvisionFormset = formset_factory(ProvisionItemForm)
-        formset = ProvisionFormset(request.POST, request.FILES)
+        ProvisionItemFormset = formset_factory(ProvisionItemForm, formset=ProvisionFormset)
+        formset = ProvisionItemFormset(request.POST, request.FILES)
 
         if formset.is_valid():
             return self.form_valid(formset)

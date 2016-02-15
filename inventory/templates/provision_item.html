@@ -12,6 +12,7 @@
         {{ formset.media }}
         <fieldset id="provision-formset">
             {{ formset.management_form }}
+            {{ formset.non_form_errors }}
             {% for form in formset %}
                 <div class="row provision-unit">
                     <div class="col-md-3">

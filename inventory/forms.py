@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django import forms
 from django.db import transaction
+from django.forms.formsets import BaseFormSet
 from inventory.message_constants import *
 
 from inventory.models import User, Item, Provision
@@ -174,6 +175,7 @@ class ProvisionItemForm(forms.ModelForm):
 
             if not quantity:
                 quantity = 1
+                self.cleaned_data['quantity'] = quantity
 
             if quantity <= 0:
                 raise forms.ValidationError(
@@ -248,6 +250,36 @@ class ProvisionItemForm(forms.ModelForm):
             'user': autocomplete.ModelSelect2(url='user_autocomplete_ajax'),
             'item': autocomplete.ModelSelect2(url='item_autocomplete_ajax'),
         }
+
+
+class ProvisionFormset(BaseFormSet):
+    """Formset for provision items view"""
+
+    def clean(self):
+        """Creating clean function to check overall quantity of items in formset"""
+
+        provisions = {}
+
+        for form in self.forms:
+            """From every form, extracting item and adding quantity"""
+            if form.cleaned_data:
+                item = form.cleaned_data['item']
+
+                if item in provisions:
+                    provisions[item] += form.cleaned_data['quantity']
+                else:
+                    provisions[item] = form.cleaned_data['quantity']
+
+        for key in provisions.keys():
+            """Now check if any item's requested quantity is more than available"""
+            # print(type(key))
+            if key.quantity < provisions[key]:
+                self._non_form_errors.append(
+                    'The available quantity for item {0} is only {1}'.format(
+                        key,
+                        key.quantity
+                    )
+                )
 
 
 class ProvisionItemByRequestForm(forms.ModelForm):
