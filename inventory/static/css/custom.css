@@ -93,6 +93,11 @@ footer .nav{
     margin-bottom: 15px;
 }
 
+/*Navigation Bar styles*/
+.navbar-default{
+    background: #336699;
+}
+
 /*PACE plugin CSS*/
 .pace {
   -webkit-pointer-events: none;

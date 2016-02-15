@@ -51,16 +51,20 @@
             <tr>
                 <td>{{ req.item.name }}</td>
                 <td>{{ req.item.description|truncatechars:100 }}</td>
-                <td>{% if req.item.returnable %}
+                <td>
+                    {% if req.item.returnable %}
                         Yes
                     {% else %}
                         No
-                    {% endif %}</td>
-                <td>{% if req.item.returnable %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if req.item.returnable %}
                         {{ req.return_by|date:"d M y" }}
                     {% else %}
                         N/A
-                    {% endif %}</td>
+                    {% endif %}
+                </td>
 
                 {% if is_admin %}
 

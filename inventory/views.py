@@ -368,7 +368,7 @@ class ProvisionListView(ListView):
 
     def get_queryset(self):
         """Changing queryset to view only non returned provisions"""
-        self.queryset = self.model.objects.filter(returned=False)
+        self.queryset = self.model.objects.filter(returned=False, approved=True)
         return super(ProvisionListView, self).get_queryset()
 
 

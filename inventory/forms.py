@@ -376,7 +376,7 @@ class ReturnItemForm(forms.ModelForm):
         new_mail = item_returned_mail(self.instance.user.email)
         recipients = [str(User.objects.get(id=self.instance.user.id).email)]
         cc_to = [str(user.email) for user in User.objects.filter(is_admin=True)]
-        send_mail_signal(sender=Provision, mail_data=new_mail, recipients=recipients, cc_to=cc_to)
+        send_mail_signal.send(sender=Provision, mail_data=new_mail, recipients=recipients, cc_to=cc_to)
 
         return instance
 
