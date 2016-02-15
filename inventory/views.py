@@ -693,7 +693,7 @@ class ReportAjaxView(View):
                 else:
                     row.append('No')
 
-                count = provisions_for_item.aggregate(Sum('quantity'))
+                count = provisions_for_item.aggregate(Sum('quantity')).get('quantity__sum')
                 row.append(count)
                 if count:
                     data.append(row)

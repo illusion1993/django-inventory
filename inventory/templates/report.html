@@ -59,12 +59,6 @@
         </tfoot>
     </table>
 
-    <form action="{% url 'report_ajax' %}" method="post">
-    {% csrf_token %}
-        <input type="text" name="csv" value="aaa"/>
-        <input type="submit"/>
-    </form>
-
     <script>
         // Javascript variables
         var csrf = '{{ csrf_token }}';

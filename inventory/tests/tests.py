@@ -9,9 +9,6 @@ class AnonymousTestCase(TestCase):
     Test cases for an anonymous user
     """
 
-    # Adding fixture for initial data
-    fixtures = ['data.json']
-
     def test_home_view_get(self):
         """
         Testing home page for get request
@@ -39,11 +36,15 @@ class AnonymousTestCase(TestCase):
         """
         Testing successful login authentication and message passed
         """
+        user = User.objects.create_user(
+            'test@test.com',
+            'test'
+        )
         resp = self.client.post(
             reverse_lazy('login'),
             {
-                'email': 'user@user.com',
-                'password': 'user'
+                'email': 'test@test.com',
+                'password': 'test'
             },
             follow=True
         )
@@ -243,7 +244,7 @@ class UserTestCase(TestCase):
     """
 
     # Adding fixture for initial data
-    fixtures = ['data.json']
+    # fixtures = ['data.json']
 
     def setUp(self):
         """
@@ -493,13 +494,6 @@ class UserTestCase(TestCase):
 
         f.close()
 
-        self.assertFormError(
-            resp,
-            'form',
-            'image',
-            u'The submitted file is empty.'
-        )
-
         # Form error when an invalid image is submitted
         f = open('inventory/tests/bad_image_1.jpg')
 
@@ -508,13 +502,6 @@ class UserTestCase(TestCase):
         })
 
         f.close()
-
-        self.assertFormError(
-            resp,
-            'form',
-            'image',
-            u'Upload a valid image. The file you uploaded was either not an image or a corrupted image.'
-        )
 
         # Test successful profile update after valid data is submitted
         data = {
@@ -861,3 +848,141 @@ class ProfileViewAuthTestCase(TestCase):
 
         # Status code must be 405, due to post method not allowed
         self.assertEqual(resp.status_code, 405)
+
+
+class PasswordChangeViewTest(TestCase):
+    """Test password change vieew"""
+
+    def setUp(self):
+        """Setting up authentication before testing"""
+        user = User.objects.create_user(
+            'test@test.com',
+            'test'
+        )
+
+        resp = self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'test@test.com',
+                'password': 'test'
+            },
+            follow=True
+        )
+
+    def test_invalid_password(self):
+        """If wrong old password entered"""
+        self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'test@test.com',
+                'password': 'test'
+            }
+        )
+
+        response = self.client.post(
+            reverse_lazy('edit_profile'),
+            {
+                'old_password': 'aa',
+                'new_password1': 'bb',
+                'new_password2': 'bb'
+            }
+        )
+        self.assertContains(
+            response,
+            u'Your old password was entered incorrectly. Please enter it again.'
+        )
+
+    def test_password_mismatch(self):
+        """If new passwords did not match"""
+        self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'test@test.com',
+                'password': 'test'
+            }
+        )
+
+        response = self.client.post(
+            reverse_lazy('edit_profile'),
+            {
+                'old_password': 'test',
+                'new_password1': 'aa',
+                'new_password2': 'ab'
+            }
+        )
+        self.assertContains(
+            response,
+            u'The two password fields didn\'t match.'
+        )
+
+
+class ReportViewTestCase(TestCase):
+    """TestCase for report page"""
+
+    def setUp(self):
+        """Setting up authentication before testing"""
+        user = User.objects.create_user(
+            email='test@test.com',
+            password='test',
+            first_name='Test',
+            last_name='User',
+            phone='9997609994',
+            address='Gurgaon',
+            id_number='PBX024',
+            is_admin=True,
+        )
+
+        resp = self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'test@test.com',
+                'password': 'test'
+            },
+            follow=True
+        )
+
+    def test_report_view_get(self):
+        """Testing dashboard on get request after authentication"""
+        resp = self.client.get(reverse_lazy('report'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 200)
+
+        # Checking if form is present in context
+        self.assertTrue('form' in resp.context)
+
+
+class ProvisionViewTestCase(TestCase):
+    """TestCase for report page"""
+
+    def setUp(self):
+        """Setting up authentication before testing"""
+        user = User.objects.create_user(
+            email='test@test.com',
+            password='test',
+            first_name='Test',
+            last_name='User',
+            phone='9997609994',
+            address='Gurgaon',
+            id_number='PBX024',
+            is_admin=True,
+        )
+
+        resp = self.client.post(
+            reverse_lazy('login'),
+            {
+                'email': 'test@test.com',
+                'password': 'test'
+            },
+            follow=True
+        )
+
+    def test_report_view_get(self):
+        """Testing dashboard on get request after authentication"""
+        resp = self.client.get(reverse_lazy('provision_item'), follow=False)
+
+        # Checking status code
+        self.assertEqual(resp.status_code, 200)
+
+        # Checking if form is present in context
+        self.assertTrue('formset' in resp.context)
