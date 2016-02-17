@@ -132,7 +132,8 @@ class User(AbstractBaseUser):
 
     def __unicode__(self):
         """unicode method"""
-        return '{0} {1}({2})'.format(self.first_name, self.last_name, self.email)
+        return '{0} {1} ({2})'.format(self.first_name, self.last_name,
+                                      self.email) if self.first_name and self.last_name else self.email
 
     @property
     def is_staff(self):

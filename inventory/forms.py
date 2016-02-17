@@ -10,7 +10,7 @@ from inventory.message_constants import *
 from inventory.models import User, Item, Provision
 from inventory.signals import send_mail_signal
 
-from datetimewidget.widgets import DateTimeWidget, DateWidget
+from datetimewidget.widgets import DateWidget
 
 from dal import autocomplete
 

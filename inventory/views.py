@@ -52,14 +52,13 @@ class LoginFormView(FormView):
     """
     View for login page
     """
-
     form_class = LoginForm
     template_name = 'login.html'
     success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
         """
-        If for is valid, authenticate user
+        If form is valid, authenticate user
         """
         # Initialize credentials for authentication
         email = form.cleaned_data['email']
@@ -70,27 +69,35 @@ class LoginFormView(FormView):
         user = auth.authenticate(email=email, password=password)
 
         # If authentication passed, send to dashboard
-        if user:
-            auth.login(self.request, user)
-            messages.success(self.request, LOGIN_SUCCESS_MESSAGE)
+        return self.authenticate_user(user, remember) if user else self.credentials_error(form)
 
-            if not remember:
-                self.request.session.set_expiry(0)
+    def authenticate_user(self, user, remember=False):
+        """
+        Function to authenticate a user
+        """
+        auth.login(self.request, user)
+        messages.success(self.request, LOGIN_SUCCESS_MESSAGE)
 
-            if self.request.GET.get('next'):
-                return HttpResponseRedirect(self.request.GET['next'])
-            else:
-                return super(LoginFormView, self).form_valid(form)
+        if not remember:
+            self.request.session.set_expiry(0)
+
+        if self.request.GET.get('next'):
+            return HttpResponseRedirect(self.request.GET['next'])
         else:
-            messages.warning(self.request, LOGIN_INVALID_MESSAGE)
-            return super(LoginFormView, self).form_invalid(form)
+            return HttpResponseRedirect(self.get_success_url())
+
+    def credentials_error(self, form):
+        """
+        Function to give error if wrong credentials entered
+        """
+        messages.warning(self.request, LOGIN_INVALID_MESSAGE)
+        return super(LoginFormView, self).form_invalid(form)
 
 
 class LogoutView(RedirectView):
     """
     View for logout
     """
-
     url = reverse_lazy('login')
     permanent = False
     http_method_names = ['get', ]
@@ -99,7 +106,6 @@ class LogoutView(RedirectView):
         """
         Processing get request to log a user out
         """
-
         url = self.get_redirect_url(*args, **kwargs)
 
         # If user was authenticated, log out
@@ -118,67 +124,50 @@ class DashboardView(TemplateView):
     """
     View for dashboard page
     """
-
     template_name = 'dashboard.html'
 
     def get_context_data(self, **kwargs):
         """
         Fetching pending and approved requests for context
         """
-
         user = self.request.user
         provisions = Provision.objects.filter(returned=False)
-        is_admin = user.is_admin
-        is_user = user.is_authenticated() and not user.is_admin
 
         # Assign admin the role of user, if requested
-        if user.is_admin and self.request.GET.get('user', False):
-            is_admin = False
-            is_user = True
+        is_admin = True if user.is_admin and not self.request.GET.get('user', False) else False
 
-        # Store role variables for context
-        context = {
-            'is_admin': is_admin,
-            'is_user': is_user
-        }
+        # Collecting data for pending and approved requests
+        pending = provisions.filter(
+            approved=False
+        ).order_by('timestamp') if is_admin else provisions.filter(
+            user=user,
+            approved=False
+        ).order_by('timestamp')
 
-        if is_admin:
-            pending = provisions.filter(
-                approved=False,
-            ).order_by('timestamp')
+        approved = provisions.filter(
+            approved=True,
+            returned=False
+        ).order_by('-timestamp') if is_admin else provisions.filter(
+            user=user,
+            approved=True
+        ).order_by('-timestamp')
 
-            approved = provisions.filter(
-                approved=True,
-                returned=False
-            ).order_by('-timestamp')
+        # Boolean variables for mark if more items are remaining for tables
+        pending_more = True if pending.count() > 5 else False
+        approved_more = True if approved.count() > 5 else False
 
-        else:
-            pending = provisions.filter(
-                user=self.request.user,
-                approved=False
-            ).order_by('timestamp')
-            approved = provisions.filter(
-                user=self.request.user,
-                approved=True
-            ).order_by('-timestamp')
-
-        if pending.count() > 5:
-            pending_more = True
-        else:
-            pending_more = False
-
-        if approved.count() > 5:
-            approved_more = True
-        else:
-            approved_more = False
-
+        # Limiting the items lists for 5 items each
         pending = pending[:5]
         approved = approved[:5]
 
-        context['pending'] = pending
-        context['approved'] = approved
-        context['pending_more'] = pending_more
-        context['approved_more'] = approved_more
+        # Preparing context and returning it
+        context = {
+            'is_admin': is_admin,
+            'pending': pending,
+            'approved': approved,
+            'pending_more': pending_more,
+            'approved_more': approved_more
+        }
 
         return context
 
@@ -187,7 +176,6 @@ class ProfileView(DetailView):
     """
     View for profile page
     """
-
     model = User
     template_name = 'profile.html'
 
@@ -195,7 +183,6 @@ class ProfileView(DetailView):
         """
         Fetching user profile for viewing
         """
-
         obj = User.objects.get(id=self.request.user.id)
         return obj
 
@@ -204,7 +191,6 @@ class EditProfileView(FormView):
     """
     View for profile update page
     """
-
     template_name = 'edit_profile.html'
     form_class = EditProfileForm
     success_url = reverse_lazy('profile')
@@ -213,15 +199,13 @@ class EditProfileView(FormView):
         """
         Load the form with the instance of user model object
         """
-
-        ins = User.objects.get(id=self.request.user.id)
+        ins = self.request.user
         return form_class(instance=ins, **self.get_form_kwargs())
 
     def form_valid(self, form):
         """
         If the form is valid, save the object in db
         """
-
         if form.has_changed():
             form.save()
         return super(EditProfileView, self).form_valid(form)
@@ -230,7 +214,6 @@ class EditProfileView(FormView):
         """
         Save both the forms in context
         """
-
         if 'form2' not in kwargs:
             kwargs['form2'] = PasswordChangeForm(user=self.request.user)
             return super(EditProfileView, self).get_context_data(**kwargs)
@@ -239,7 +222,6 @@ class EditProfileView(FormView):
         """
         Checking if password form is submitted
         """
-
         password_form_submitted = request.POST.get('change_password', False)
 
         if password_form_submitted:
@@ -329,7 +311,9 @@ class EditItemListView(ListView):
 
 
 class EditItemView(UpdateView):
-    """View for item editing"""
+    """
+    View for item editing
+    """
 
     model = Item
     template_name = 'edit_item.html'
@@ -337,7 +321,9 @@ class EditItemView(UpdateView):
     success_url = reverse_lazy('edit_item_list')
 
     def form_valid(self, form):
-        """Adding message when item is updated"""
+        """
+        Adding message when item is updated
+        """
         if form.has_changed():
             messages.success(
                 self.request,
@@ -350,14 +336,18 @@ class EditItemView(UpdateView):
 
 
 class RequestItemView(FormView):
-    """View for requesting an item"""
+    """
+    View for requesting an item
+    """
 
     template_name = 'request_item.html'
     form_class = RequestItemForm
     success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
-        """Save provision object, Pass message and save request"""
+        """
+        Save provision object, Pass message and save request
+        """
         form.instance.user = self.request.user
         form.save()
         messages.success(self.request, REQUEST_SUBMITTED_MESSAGE)
@@ -365,27 +355,34 @@ class RequestItemView(FormView):
 
 
 class ProvisionListView(ListView):
-    """View for list of provisions to mark returned from"""
+    """
+    View for list of provisions to mark returned from
+    """
 
     model = Provision
     template_name = 'provision_list.html'
 
     def get_queryset(self):
-        """Changing queryset to view only non returned provisions"""
+        """
+        Changing queryset to view only non returned provisions
+        """
         self.queryset = self.model.objects.filter(returned=False, approved=True)
         return super(ProvisionListView, self).get_queryset()
 
 
 class ReturnItemView(UpdateView):
-    """View for returning item"""
-
+    """
+    View for returning item
+    """
     model = Provision
     form_class = ReturnItemForm
     template_name = 'return_item.html'
     success_url = reverse_lazy('provision_list')
 
     def get_object(self, queryset=None):
-        """Get provision object from the database, give 404 if not found"""
+        """
+        Get provision object from the database, give 404 if not found
+        """
         pk = self.kwargs.get(self.pk_url_kwarg)
         obj = get_object_or_404(
             Provision,
@@ -397,10 +394,9 @@ class ReturnItemView(UpdateView):
         return obj
 
     def form_valid(self, form):
-        """Passing success message when form is validated"""
-        user = form.instance.user.email
-        item = form.instance.item.name
-
+        """
+        Passing success message when form is validated
+        """
         messages.success(
             self.request,
             ITEM_RETURNED_MESSAGE
@@ -410,8 +406,9 @@ class ReturnItemView(UpdateView):
 
 
 class ProvisionItemView(FormView):
-    """View for provision item page"""
-
+    """
+    View for provision item page
+    """
     template_name = 'provision_item.html'
     success_url = reverse_lazy('dashboard')
 
@@ -419,7 +416,6 @@ class ProvisionItemView(FormView):
         """
         If the form is valid, redirect to the supplied URL.
         """
-
         for form in formset:
             form.save()
 
@@ -477,24 +473,6 @@ class ProvisionByRequestView(UpdateView):
         )
 
         return super(ProvisionByRequestView, self).form_valid(form)
-
-
-class PasswordChangeView(FormView):
-    template_name = 'change_password.html'
-    form_class = PasswordChangeForm
-    success_url = reverse_lazy('profile')
-
-    def get_form_kwargs(self):
-        kwargs = super(PasswordChangeView, self).get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
-    def form_valid(self, form):
-        """
-        If the form is valid, redirect to the supplied URL.
-        """
-        form.save()
-        return HttpResponseRedirect(self.get_success_url())
 
 
 class LoadMoreView(View):
