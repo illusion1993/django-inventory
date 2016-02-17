@@ -1,7 +1,6 @@
 """Inventory app views"""
 from datetime import datetime
 import time
-import json
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
@@ -223,7 +222,8 @@ class EditProfileView(FormView):
         If the form is valid, save the object in db
         """
 
-        form.save()
+        if form.has_changed():
+            form.save()
         return super(EditProfileView, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -334,16 +334,19 @@ class EditItemView(UpdateView):
     model = Item
     template_name = 'edit_item.html'
     form_class = EditItemForm
-    success_url = reverse_lazy('items_list')
+    success_url = reverse_lazy('edit_item_list')
 
     def form_valid(self, form):
         """Adding message when item is updated"""
-        messages.success(
-            self.request,
-            item_edited_message(form.instance.name)
-        )
+        if form.has_changed():
+            messages.success(
+                self.request,
+                item_edited_message(form.instance.name)
+            )
 
-        return super(EditItemView, self).form_valid(form)
+            return super(EditItemView, self).form_valid(form)
+
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class RequestItemView(FormView):
@@ -505,30 +508,22 @@ class LoadMoreView(View):
 
             provisions = Provision.objects.filter(returned=False)
 
-            if request.user.is_admin and self.request.GET.get('is_admin', False) == 'True':
-                is_admin = True
-            else:
-                is_admin = False
+            is_admin = request.user.is_admin and self.request.GET.get('is_admin', False) == 'True'
 
-            if is_admin:
-                pending = provisions.filter(
-                    approved=False,
-                ).order_by('timestamp')
+            pending = provisions.filter(
+                approved=False,
+            ).order_by('timestamp') if is_admin else provisions.filter(
+                user=self.request.user,
+                approved=False
+            ).order_by('timestamp')
 
-                approved = provisions.filter(
-                    approved=True,
-                    returned=False
-                ).order_by('-timestamp')
-
-            else:
-                pending = provisions.filter(
-                    user=self.request.user,
-                    approved=False
-                ).order_by('timestamp')
-                approved = provisions.filter(
-                    user=self.request.user,
-                    approved=True
-                ).order_by('-timestamp')
+            approved = provisions.filter(
+                approved=True,
+                returned=False
+            ).order_by('-timestamp') if is_admin else provisions.filter(
+                user=self.request.user,
+                approved=True
+            ).order_by('-timestamp')
 
             pending = pending[5:]
             approved = approved[5:]
@@ -546,7 +541,7 @@ class LoadMoreView(View):
                         'description': (p.item.description[:75] + '...') if len(
                             p.item.description) > 75 else p.item.description,
                         'timestamp': p.timestamp.strftime("%d %b %y"),
-                        'user_email': p.user.email,
+                        'user_email': str(p.user),
                         'provision_id': p.id
                     })
 
@@ -567,7 +562,7 @@ class LoadMoreView(View):
                             a.item.description) > 75 else a.item.description,
                         'returnable': 'Yes' if a.item.returnable else 'No',
                         'return_by': a.return_by.strftime("%d %b %y") if a.return_by else 'N/A',
-                        'user_email': a.user.email,
+                        'user_email': str(a.user),
                         'returned': 'Yes' if a.returned else 'No' if a.item.returnable else 'N/A',
                     })
 

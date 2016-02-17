@@ -85,6 +85,7 @@ $('#profile_update_form :input[type=file]').change(function(event){
                     if(data['success'] == 'True'){
                         error_list.remove();
                         $('#profile_image').attr('src', data['image']);
+                        alert('Image uploaded');
                     }
                     else{
                         error_list.remove();

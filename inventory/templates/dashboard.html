@@ -43,7 +43,7 @@
                         <td>{{ req.timestamp|date:"d M y" }}</td>
                         {% if is_admin %}
                         <td>
-                            {{ req.user.email }}
+                            {{ req.user }}
                         </td>
                         <td>
                             <a href="{% url 'provision_by_request' req.id %}">Provision Item</a>

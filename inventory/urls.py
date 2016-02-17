@@ -21,8 +21,8 @@ from inventory.views import (
     ItemAutocompleteView, ReportView, ReportAjaxView, LoginFormView)
 from inventory.decorators import (
     admin_required,
-    user_required,
-    anonymous_required)
+    anonymous_required
+)
 
 
 urlpatterns = patterns(
@@ -50,32 +50,28 @@ urlpatterns = patterns(
     url(
         r'^dashboard/$',
         login_required(
-            DashboardView.as_view(),
-            login_url='login'
+            DashboardView.as_view()
         ),
         name="dashboard"
     ),
     url(
         r'^profile/$',
         login_required(
-            ProfileView.as_view(),
-            login_url='login'
+            ProfileView.as_view()
         ),
         name="profile"
     ),
     url(
         r'^profile/edit/$',
         login_required(
-            EditProfileView.as_view(),
-            login_url='login'
+            EditProfileView.as_view()
         ),
         name="edit_profile"
     ),
     url(
         r'^items/$',
         login_required(
-            ItemsListView.as_view(),
-            login_url='login'
+            ItemsListView.as_view()
         ),
         name="items_list"
     ),
@@ -149,8 +145,7 @@ urlpatterns = patterns(
     url(
         r'^request/$',
         login_required(
-            RequestItemView.as_view(),
-            login_url='login'
+            RequestItemView.as_view()
         ),
         name='request_item'
     ),
@@ -159,16 +154,14 @@ urlpatterns = patterns(
     url(
         r'^ajax/load_more/$',
         login_required(
-            LoadMoreView.as_view(),
-            login_url='login'
+            LoadMoreView.as_view()
         ),
         name="load_more_ajax"
     ),
     url(
         r'^ajax/upload_image/$',
         login_required(
-            ImageUploadView.as_view(),
-            login_url='login'
+            ImageUploadView.as_view()
         ),
         name="image_upload_ajax"
     ),
