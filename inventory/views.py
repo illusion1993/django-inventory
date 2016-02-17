@@ -1,11 +1,12 @@
 """Inventory app views"""
 from datetime import datetime
+import time
 import json
 
 from django.contrib import auth, messages
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.urlresolvers import reverse_lazy
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.forms import formset_factory
 from django.http import (
     HttpResponseRedirect,
@@ -305,7 +306,7 @@ class AddItemView(CreateView):
     model = Item
     form_class = AddItemForm
     template_name = 'add_item.html'
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('items_list')
 
     def form_valid(self, form):
         """Adding message when form is validated"""
@@ -333,7 +334,7 @@ class EditItemView(UpdateView):
     model = Item
     template_name = 'edit_item.html'
     form_class = EditItemForm
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('items_list')
 
     def form_valid(self, form):
         """Adding message when item is updated"""
@@ -378,7 +379,7 @@ class ReturnItemView(UpdateView):
     model = Provision
     form_class = ReturnItemForm
     template_name = 'return_item.html'
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('provision_list')
 
     def get_object(self, queryset=None):
         """Get provision object from the database, give 404 if not found"""
@@ -478,7 +479,7 @@ class ProvisionByRequestView(UpdateView):
 class PasswordChangeView(FormView):
     template_name = 'change_password.html'
     form_class = PasswordChangeForm
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('profile')
 
     def get_form_kwargs(self):
         kwargs = super(PasswordChangeView, self).get_form_kwargs()
@@ -544,6 +545,8 @@ class LoadMoreView(View):
                         'item_name': p.item.name,
                         'description': (p.item.description[:75] + '...') if len(
                             p.item.description) > 75 else p.item.description,
+                        'timestamp': p.timestamp.strftime("%d %b %y"),
+                        'user_email': p.user.email,
                         'provision_id': p.id
                     })
 
@@ -560,7 +563,8 @@ class LoadMoreView(View):
                     a_dict['approved'].append({
                         'provision_id': a.id,
                         'item_name': a.item.name,
-                        'description': (a.item.description[:75] + '...') if len(a.item.description) > 75 else a.item.description,
+                        'description': (a.item.description[:75] + '...') if len(
+                            a.item.description) > 75 else a.item.description,
                         'returnable': 'Yes' if a.item.returnable else 'No',
                         'return_by': a.return_by.strftime("%d %b %y") if a.return_by else 'N/A',
                         'user_email': a.user.email,
@@ -651,65 +655,25 @@ class ReportView(TemplateView):
 
 
 class ReportAjaxView(View):
+    """View to handle AJAX requests by Report page"""
 
     def get(self, request):
+        """Get request responds the items data for report table"""
         if request.is_ajax():
-
             # Saving the GET variables to filter data
-            returnable = request.GET.get('r', True)
-            non_returnable = request.GET.get('nr', True)
+            returnable = request.GET.get('r')
+            non_returnable = request.GET.get('nr')
             start_date = request.GET.get('sd', '')
             end_date = request.GET.get('ed', '')
-            mail_me = request.GET.get('mm', False)
 
-            # Storing all the item and provision objects
-            items = Item.objects.all()
-            provisions = Provision.objects.filter(approved=True)
+            json_data = self.get_report_data(
+                returnable,
+                non_returnable,
+                start_date,
+                end_date
+            )
 
-            # Cutting down the irrelevant objects, as per filters
-            if returnable == 'true' and non_returnable == 'false':
-                items = items.filter(returnable=True)
-            if non_returnable == 'true' and returnable == 'false':
-                items = items.filter(returnable=False)
-            if not start_date == '':
-                start_date = datetime.strptime(str(start_date), '%Y-%m-%d')
-                for provision in provisions:
-                    if provision.approved_on < start_date:
-                        provisions = provisions.exclude(id=provision.id)
-            if not end_date == '':
-                end_date = datetime.strptime(str(end_date), '%Y-%m-%d')
-                for provision in provisions:
-                    if provision.approved_on > end_date:
-                        provisions = provisions.exclude(id=provision.id)
-
-            # Storing the final results for response data
-            data = []
-
-            for item in items:
-                provisions_for_item = provisions.filter(item=item)
-                row = {}
-                row['name'] = (item.name)
-                row['description'] = (item.description)
-
-                if item.returnable:
-                    row['returnable'] = 'Yes'
-
-                else:
-                    row['returnable'] = 'No'
-
-                count = provisions_for_item.aggregate(Sum('quantity')).get('quantity__sum')
-                row['quantity'] = count
-                if count:
-                    data.append(row)
-
-            resp = {
-                "draw": 10,
-                "recordsTotal": provisions.count(),
-                "recordsFiltered": provisions.count(),
-                "data": data
-            }
-
-            return JsonResponse(resp)
+            return JsonResponse(json_data)
 
         else:
             raise Http404()
@@ -717,10 +681,23 @@ class ReportAjaxView(View):
     def post(self, request):
 
         if request.is_ajax():
-            csv = request.POST.get('csv', '')
+            # Saving the POST variables to filter data
+            returnable = request.POST.get('r')
+            non_returnable = request.POST.get('nr')
+            start_date = request.POST.get('sd', '')
+            end_date = request.POST.get('ed', '')
+            keyword = request.POST.get('kw', '')
 
-            if csv != '':
-                csv = {'csv': json.loads(csv)}
+            csv = self.get_report_data(
+                returnable,
+                non_returnable,
+                start_date,
+                end_date,
+                keyword
+            )['data']
+
+            if csv:
+                csv = {'csv': csv}
                 send_report.delay(csv, request.user.email)
 
                 resp = {
@@ -736,3 +713,55 @@ class ReportAjaxView(View):
 
         else:
             raise Http404()
+
+    def get_report_data(self, returnable, non_returnable, start_date, end_date, keyword=''):
+        """Generate data to give in report"""
+
+        try:
+            start_date = datetime.fromtimestamp(
+                time.mktime(time.strptime(start_date, "%Y-%m-%d"))
+            )
+
+        except ValueError:
+            start_date = datetime.fromtimestamp(0)
+
+        try:
+            end_date = datetime.fromtimestamp(
+                time.mktime(time.strptime(end_date, "%Y-%m-%d"))
+            )
+
+        except ValueError:
+            end_date = datetime.now()
+
+        # Creating filters for items
+        Q_set = Q(name__icontains=keyword) | Q(description__icontains=keyword)
+
+        if returnable and not non_returnable:
+            Q_set &= Q(returnable=True)
+
+        elif non_returnable and not returnable:
+            Q_set &= Q(returnable=False)
+
+        items = Item.objects.filter(Q_set)
+        json_data = {
+            'data': []
+        }
+
+        for item in items:
+            provisions_for_item = Provision.objects.filter(
+                item=item,
+                approved_on__gte=start_date,
+                approved_on__lt=end_date
+            )
+
+            if provisions_for_item.count():
+                quantity = provisions_for_item.aggregate(Sum('quantity')).get('quantity__sum')
+                row = {
+                    'name': item.name,
+                    'description': item.description,
+                    'returnable': 'Yes' if item.returnable else 'No',
+                    'quantity': quantity
+                }
+                json_data['data'].append(row)
+
+        return json_data

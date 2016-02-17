@@ -1,5 +1,14 @@
 body{
     padding-top: 70px;
+    font-family: 'Lato', sans-serif;
+    background-color: #e5e5e5;
+}
+
+h1.custom-heading{
+    font-size: 2.4rem;
+    font-weight: bold;
+    margin-top: 3.9rem;
+    margin-bottom: 1rem;
 }
 
 header{
@@ -28,22 +37,13 @@ th, td{
     margin-bottom: 40px;
 }
 
-.alert-container{
-    z-index: 9999;
-    position: fixed;
-    left: 0;
-    top: 0;
-    padding-top: 15px;
-}
-
-.alertbox{
-    //position: fixed;
-    background: #ccc;
-    //width: 100%;
+.alert-container .alert{
+    margin: 0;
 }
 
 .main-content{
     min-height: 450px;
+    padding-top: 20px;
 }
 
 .alert-error {
@@ -94,8 +94,96 @@ footer .nav{
 }
 
 /*Navigation Bar styles*/
-.navbar-default{
-    /*background: #336699;*/
+.navbar-inverse{
+    background: #2d3e50;
+    border: none;
+}
+@media (min-width: 768px){
+    .navbar-nav>li>a {
+        padding-top: 25px;
+        padding-bottom: 25px;
+        border-bottom: 4px solid transparent;
+    }
+    .navbar-brand{
+        padding-top: 25px;
+        padding-bottom: 25px;
+        height: auto;
+    }
+}
+.navbar-inverse .navbar-nav>li>a:focus, .navbar-inverse .navbar-nav>li>a:hover, .navbar-inverse .navbar-nav>.open>a, .navbar-inverse .navbar-nav>.open>a:focus, .navbar-inverse .navbar-nav>.open>a:hover {
+    color: #fff;
+    border-bottom: 4px solid #52b6df;
+    background: transparent;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+}
+.navbar-inverse .navbar-nav>.active>a, .navbar-inverse .navbar-nav>.active>a:focus, .navbar-inverse .navbar-nav>.active>a:hover {
+    color: #fff;
+    background: transparent;
+    border-bottom: 4px solid #52b6df;
+    box-shadow: none;
+    -webkit-box-shadow: none;
+}
+
+/*Item Tables*/
+#pending_table, #approved_table{
+    width: 100%;
+}
+.load_more_container{
+    text-align: center;
+    padding: 10px 0;
+}
+
+/*Profile Sticker*/
+#profile-sticker{
+    background: #f8f8f8;
+    border-radius: 6px;
+    padding-top: 20px;
+}
+#profile-sticker .dp-box{
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    border: 8px solid #e8e8e8;
+    margin: auto;
+    margin-bottom: 20px;
+}
+#profile-sticker .edit-profile-link{
+    text-decoration: none;
+    float: right;
+    font-size: 22px;
+    margin-right: 10px;
+}
+#profile-sticker .profile-tabs{
+    padding-left: 10px;
+    padding-right: 10px;
+}
+#profile-sticker .name{
+    text-align: center;
+    font-size: 22px;
+    font-weight: 300;
+    color: #222;
+    margin-bottom: 5px;
+}
+#profile-sticker .email{
+    text-align: center;
+    font-size: 16px;
+    font-weight: 400;
+    color: #666;
+    margin-top: 5px;
+    padding-bottom: 15px;
+}
+#profile-sticker .profile-lower{
+    padding: 8px 20px;
+    margin: 0;
+    font-size: 16px;
+    border-top: 3px solid #eee;
+    text-align: center;
+    color: #2d3e50;
+}
+#profile-sticker .fa{
+    color: #1d9d74;
+    margin-right: 10px;
 }
 
 /*Override Select2 styles*/

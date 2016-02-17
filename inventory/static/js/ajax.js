@@ -12,13 +12,15 @@ $('#load_more_pending').click(function (event){
             success: function(data, textStatus, jqXHR){
                 var html_output = '';
                 $.each(data['pending'], function(key, value){
-                    html_output += '<tr><td>' + value['item_name'] + '</td><td>';
-                    if(is_admin=='True')
-                        html_output += '<a href="' + provision_item_url + value['provision_id'] + '">Provision Item</a>';
-                    else
-                        html_output += value['description'];
+                    html_output += '<tr><td>' + value['item_name'] + '</td>';
+                    html_output += '<td>' + value['description'] + '</td>';
+                    html_output += '<td>' + value['timestamp'] + '</td>';
+                    if(is_admin=='True'){
+                        html_output += '<td>' + value['user_email'] + '</td>';
+                        html_output += '<td><a href="' + provision_item_url + value['provision_id'] + '">Provision Item</a></td>';
+                    }
 
-                    html_output += '</td></tr>';
+                    html_output += '</tr>';
                 });
                 $('#pending_table').append(html_output);
                 self.remove();
