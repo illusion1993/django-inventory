@@ -6,6 +6,8 @@ from os.path import abspath, basename, dirname, join, normpath
 
 ########## PATH CONFIGURATION
 # Absolute filesystem path to the Django project directory:
+from django.core.urlresolvers import reverse_lazy
+
 BASE_DIR = dirname(abspath(__file__))
 ########## END PATH CONFIGURATION
 
@@ -273,6 +275,7 @@ TEMPLATE_DEBUG = DEBUG
 COMPRESS_URL = STATIC_URL
 
 AUTH_USER_MODEL = 'inventory.User'
+LOGIN_URL = reverse_lazy('login')
 
 # CELERY STUFF
 BROKER_URL = 'redis://localhost:6379'

@@ -43,3 +43,26 @@ def role_prefix(context, *args):
 
     else:
         return ''
+
+@register.simple_tag(takes_context=False)
+def if_data(alt, *args):
+    """Place alternative text if user info is not available"""
+    for data in args:
+        if not data or data == '':
+            return alt
+
+    if len(args) == 1:
+        return args[0]
+
+    elif len(args) > 1:
+        return ' '.join(args)
+
+    else:
+        return alt
+
+@register.simple_tag(takes_context=False)
+def if_image(alt, image):
+    """Place alternative text if user info is not available"""
+    print 'image is"{}"'.format(image)
+    print 'alt is"{}"'.format(alt)
+    return alt

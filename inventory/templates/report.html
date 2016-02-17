@@ -59,6 +59,16 @@
         </tfoot>
     </table>
 
+    <form action="http://127.0.0.1:8000/report/ajax/" method="post">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+        <input name="r" type="hidden" value="true"/>
+        <input name="nr" type="hidden" value="true"/>
+        <input name="sd" type="hidden" value="2016-02-02"/>
+        <input name="ed" type="hidden" value="2016-02-17"/>
+        <input name="kw" type="hidden" value="dell"/>
+        <input type="submit"/>
+    </form>
+
     <script>
         // Javascript variables
         var csrf = '{{ csrf_token }}';
@@ -79,6 +89,7 @@
         });
 
         $('.filter-handle').change(function(){
+            var checked = $(this);
             var returnable = $('#returnable-filter').is(':checked'),
                     non_returnable = $('#non-returnable-filter').is(':checked'),
                     start_date = $('input#start-date-filter').val(),
@@ -99,8 +110,22 @@
             table.clear();
             table.destroy();
 
+            var url = "{% url 'report_ajax' %}?";
+            if(returnable){
+                url += 'r=true&&';
+            }
+            if(non_returnable){
+                url += 'nr=true&&';
+            }
+            if(start_date){
+                url += 'sd=' + start_date + '&&';
+            }
+            if(end_date){
+                url += 'ed=' + end_date + '&&';
+            }
+
             table = $('#report-table').DataTable( {
-                        "ajax": "{% url 'report_ajax' %}?r=" + returnable + "&&nr=" + non_returnable + "&&sd=" + start_date + "&&ed=" + end_date,
+                        "ajax": url,
                         "columns": [
                             {"data": "name"},
                             {"data": "description", "sortable": false},
@@ -112,37 +137,23 @@
 
         $('#mail_me').click(function(){
             var button = $(this);
+            var returnable = $('#returnable-filter').is(':checked')?'true':'false',
+                    non_returnable = $('#non-returnable-filter').is(':checked')?'true':'false',
+                    start_date = $('input#start-date-filter').val(),
+                    end_date = $('input#end-date-filter').val(),
+                    keyword = $('input[type=search]').val().trim();
+
             button.prop('disabled', true);
-            var data = $('#report-table').DataTable().rows({
-                        order: 'current',
-                        search: 'applied'
-                    }).data(),
-                csv = [];
 
-            $.each(data, function(key, value){
-                csv.push({
-                    'name': value.name,
-                    'description': value.description,
-                    'returnable': value.returnable,
-                    'quantity': value.quantity
-                })
-            });
-
-            console.log(csv);
-
-            if(csv == ''){
-                alert('No data to send');
-                button.prop('disabled', false);
-            }
-
-            else{
-                csv = JSON.stringify(csv);
-
-                var formData = new FormData();
-                formData.append('csv', csv);
+            var formData = new FormData();
+                formData.append('r', returnable);
+                formData.append('nr', non_returnable);
+                formData.append('sd', start_date);
+                formData.append('ed', end_date);
+                formData.append('kw', keyword);
                 formData.append('csrfmiddlewaretoken', csrf);
 
-                $.ajax({
+            $.ajax({
                         url:'{% url 'report_ajax' %}',
                         cache: false,
                         contentType: false,
@@ -155,8 +166,7 @@
 
                             button.prop('disabled', false);
                         }
-                })
-            }
+                });
         });
 
     </script>

@@ -24,10 +24,6 @@ ID_NUMBER_REGEX = RegexValidator(
     regex=r'^[a-zA-Z0-9]*$',
     message="Enter a valid id number. Only alphabets and digits allowed."
 )
-ITEM_NAME_REGEX = RegexValidator(
-    regex=r'^[A-Za-z]([a-zA-Z ,\'\.\/]*)$',
-    message="Invalid item name entered."
-)
 
 
 class UserManager(BaseUserManager):
@@ -103,7 +99,7 @@ class User(AbstractBaseUser):
 
     phone = models.CharField(
         validators=[PHONE_REGEX],
-        max_length=15
+        max_length=10
     )
 
     address = models.TextField(
@@ -136,7 +132,8 @@ class User(AbstractBaseUser):
 
     def __unicode__(self):
         """unicode method"""
-        return self.email
+        return '{0} {1} ({2})'.format(self.first_name, self.last_name,
+                                      self.email) if self.first_name and self.last_name else self.email
 
     @property
     def is_staff(self):
@@ -173,7 +170,6 @@ class Item(models.Model):
     name = models.CharField(
         max_length=50,
         unique=True,
-        validators=[ITEM_NAME_REGEX]
     )
 
     description = models.TextField(

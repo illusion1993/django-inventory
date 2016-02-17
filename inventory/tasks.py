@@ -21,3 +21,16 @@ def send_report(data, email):
     )
     mail.attach('Report.csv', attachment_file.getvalue(), 'text/csv')
     mail.send()
+
+
+@task(name="send_mail_task")
+def send_mail_task(data):
+
+    new_mail = EmailMessage(
+        subject=data['subject'],
+        body=data['body'],
+        to=data['to'],
+        cc=data['cc']
+    )
+
+    new_mail.send()

@@ -1,96 +1,131 @@
 {% extends 'base.html' %}
-
+{% load staticfiles %}
+{% load custom_tags %}
+{% static "images/default.jpg" as default_picture %}
 {% block title %}Inventory Management|Dashboard{% endblock %}
 
 {% block content %}
 
-<div class="table-container">
-    <h1>Pending Requests</h1>
-    <table class="table-striped table-bordered" id="pending_table">
-        <tr>
-            <th>Item</th>
-            {% if is_admin %}
-                <th>Link to provision</th>
-            {% else %}
-                <th>Description</th>
-            {% endif %}
-        </tr>
-        {% for req in pending %}
-            <tr>
-                <td>{{ req.item.name }}</td>
-                <td>
+<div class="row">
+    <div class="col-md-3">
+        <div id="profile-sticker">
+            <a class="fa fa-edit edit-profile-link" href="{% url 'edit_profile' %}" alt="Edit Profile"></a>
+            <div class="dp-box" style="background-image: url('{% if user.image %}{{ user.image.url }}{%else %}{% static "images/default.jpg" %}{% endif %}'); background-size: cover; background-position: center;">
+            </div>
+            <div class="profile-info">
+                <h4 class="profile-tabs name">{% if_data '(Not Available)' user.first_name user.last_name %}</h4>
+                <h5 class="profile-tabs email">{{ user.email|truncatechars:30 }}</h5>
+
+                <h6 class="profile-lower"><i class="fa fa-phone"></i> {% if_data '(Not Available)' user.phone %}</h6>
+                <h6 class="profile-lower"><i class="fa fa-map-marker"></i> {% if_data '(Not Available)' user.address %}</h6>
+                <h6 class="profile-lower"><i class="fa fa-user"></i> {% if_data '(Not Available)' user.id_number %}</h6>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="table-container">
+            <h1 class="custom-heading">Pending Requests</h1>
+            <table class="table-striped table-bordered" id="pending_table">
+                <tr>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th>Request on</th>
                     {% if is_admin %}
-                        <a href="{% url 'provision_by_request' req.id %}">Provision Item</a>
-                    {% else %}
-                        {{ req.item.description|truncatechars:80 }}
+                        <th>User</th>
+                        <th>Link to provision</th>
                     {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-    </table>
-    {% if pending_more %}
-    <a href="#" id="load_more_pending" action="{% url 'load_more_ajax' %}">Load More</a>
-    {% endif %}
-</div>
-<div class="table-container">
-    <h1>Approved Requests</h1>
-    <table class="table-striped table-bordered" id="approved_table">
-        <tr>
-            <th>Item</th>
-            <th>Description</th>
-            <th>Returnable</th>
-            <th>Return by date</th>
-            {% if is_admin %}
-            <th>User</th>
-            <th>Returned</th>
-            <th>Return Item</th>
-            {% endif %}
+                </tr>
+                {% for req in pending %}
+                    <tr>
+                        <td>{{ req.item.name }}</td>
+                        <td>{{ req.item.description|truncatechars:30 }}</td>
+                        <td>{{ req.timestamp|date:"d M y" }}</td>
+                        {% if is_admin %}
+                        <td>
+                            {{ req.user }}
+                        </td>
+                        <td>
+                            <a href="{% url 'provision_by_request' req.id %}">Provision Item</a>
+                        </td>
+                        {% endif %}
 
-        </tr>
-        {% for req in approved %}
-            <tr>
-                <td>{{ req.item.name }}</td>
-                <td>{{ req.item.description|truncatechars:100 }}</td>
-                <td>
-                    {{ req.item.returnable|yesno:"Yes,No,Maybe" }}
-                </td>
-                <td>
-                    {% if req.item.returnable %}
-                        {{ req.return_by|date:"d M y" }}
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </td>
-
-                {% if is_admin %}
-
-                <td>{{ req.user }}</td>
-                <td>{% if req.item.returnable and req.item.returned %}
-                        Yes
-                    {% elif req.item.returnable and not req.item.returned %}
-                        No
-                    {% else %}
-                        N/A
-                    {% endif %}</td>
-                <td>{% if req.item.returnable and req.item.returned %}
-                        Returned
-                    {% elif req.item.returnable and not req.item.returned %}
-                        <a href="{% url 'return_item' req.id %}">Mark Returned</a>
-                    {% else %}
-                        N/A
-                    {% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <div class="load_more_container">
+                {% if pending_more %}
+                    <a class="btn btn-default" href="#" id="load_more_pending" action="{% url 'load_more_ajax' %}">Load More</a>
                 {% endif %}
-            </tr>
-        {% endfor %}
-    </table>
-    {% if approved_more %}
-    <a href="#" id="load_more_approved" action="{% url 'load_more_ajax' %}">Load More</a>
-    {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-container">
+            <h1 class="custom-heading">Approved Requests</h1>
+            <table class="table-striped table-bordered" id="approved_table">
+                <tr>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th>Returnable</th>
+                    <th>Return by date</th>
+                    {% if is_admin %}
+                    <th>User</th>
+                    <th>Returned</th>
+                    <th>Return Item</th>
+                    {% endif %}
+
+                </tr>
+                {% for req in approved %}
+                    <tr>
+                        <td>{{ req.item.name }}</td>
+                        <td>{{ req.item.description|truncatechars:100 }}</td>
+                        <td>
+                            {{ req.item.returnable|yesno:"Yes,No,Maybe" }}
+                        </td>
+                        <td>
+                            {% if req.item.returnable %}
+                                {{ req.return_by|date:"d M y" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+
+                        {% if is_admin %}
+
+                        <td>{{ req.user }}</td>
+                        <td>{% if req.item.returnable and req.item.returned %}
+                                Yes
+                            {% elif req.item.returnable and not req.item.returned %}
+                                No
+                            {% else %}
+                                N/A
+                            {% endif %}</td>
+                        <td>{% if req.item.returnable and req.item.returned %}
+                                Returned
+                            {% elif req.item.returnable and not req.item.returned %}
+                                <a href="{% url 'return_item' req.id %}">Mark Returned</a>
+                            {% else %}
+                                N/A
+                            {% endif %}</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </table>
+            <div class="load_more_container">
+                {% if approved_more %}
+                    <a class="btn btn-default" href="#" id="load_more_approved" action="{% url 'load_more_ajax' %}">Load More</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
     <script>
         // Javascript variables
-        var is_admin = {% if is_admin %}'True'{% else %}'False'{% endif %},
+        var is_admin = {% if is_admin and not request.GET.user %}'True'{% else %}'False'{% endif %},
             provision_list_url = '{% url 'provision_list' %}',
             provision_item_url = '{% url 'provision_item' %}';
     </script>
