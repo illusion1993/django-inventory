@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Profile{% endblock %}
+
+{% block content %}
+    <h1>Inventory Report</h1>
+
+    <div class="report-filter-box">
+        <h4>Filter records</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <input type="checkbox" id="returnable-filter" class="filter-handle" name="returnable"/>
+                    <label for="returnable-filter">Returnable Items</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="non-returnable-filter" class="filter-handle" name="non-returnable"/>
+                    <label for="non-returnable-filter">Non-Returnable Items</label>
+                </div>
+            </div>
+            {{ form.media }}
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="returnable-filter">Start Date</label>
+                    {{ form.start_date }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="returnable-filter">End Date</label>
+                    {{ form.end_date }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-bottom: 20px;">
+        <div class="col-md-4">
+            <button id="mail_me" class="btn btn-warning">Mail me</button>
+        </div>
+    </div>
+
+    <table id="report-table" class="display" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Description</th>
+                <th>Returnable</th>
+                <th>Provisions</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>Item Name</th>
+                <th>Description</th>
+                <th>Returnable</th>
+                <th>Provisions</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <script>
+        // Javascript variables
+        var csrf = '{{ csrf_token }}';
+    </script>
+
+    <script type="text/javascript">
+        var table;
+        $(document).ready(function() {
+            table = $('#report-table').DataTable( {
+                        "ajax": "{% url 'report_ajax' %}",
+                        "columns": [
+                            {"data": "name"},
+                            {"data": "description", "sortable": false},
+                            {"data": "returnable", "sortable": false, "searchable": false},
+                            {"data": "quantity", "searchable": false}
+                        ]
+                    });
+        });
+
+        $('.filter-handle').change(function(){
+            var checked = $(this);
+            var returnable = $('#returnable-filter').is(':checked'),
+                    non_returnable = $('#non-returnable-filter').is(':checked'),
+                    start_date = $('input#start-date-filter').val(),
+                    end_date = $('input#end-date-filter').val(),
+                    url = "{% url 'report_ajax' %}";
+
+            var sd = Date.parse(start_date);
+            var ed = Date.parse(end_date);
+
+            if(ed <= sd){
+                alert('Please select valid dates. Start date must be less than End date.');
+                start_date = '';
+                end_date = '';
+                $('input#start-date-filter').val('');
+                $('input#end-date-filter').val('');
+            }
+
+            table.clear();
+            table.destroy();
+
+            var url = "{% url 'report_ajax' %}?";
+            if(returnable){
+                url += 'r=true&&';
+            }
+            if(non_returnable){
+                url += 'nr=true&&';
+            }
+            if(start_date){
+                url += 'sd=' + start_date + '&&';
+            }
+            if(end_date){
+                url += 'ed=' + end_date + '&&';
+            }
+
+            table = $('#report-table').DataTable( {
+                        "ajax": url,
+                        "columns": [
+                            {"data": "name"},
+                            {"data": "description", "sortable": false},
+                            {"data": "returnable", "sortable": false, "searchable": false},
+                            {"data": "quantity", "searchable": false}
+                        ]
+                    });
+        });
+
+        $('#mail_me').click(function(){
+            var button = $(this);
+            var returnable = $('#returnable-filter').is(':checked')?'true':'false',
+                    non_returnable = $('#non-returnable-filter').is(':checked')?'true':'false',
+                    start_date = $('input#start-date-filter').val(),
+                    end_date = $('input#end-date-filter').val(),
+                    keyword = $('input[type=search]').val().trim();
+
+            button.prop('disabled', true);
+
+            var formData = new FormData();
+                formData.append('r', returnable);
+                formData.append('nr', non_returnable);
+                formData.append('sd', start_date);
+                formData.append('ed', end_date);
+                formData.append('kw', keyword);
+                formData.append('csrfmiddlewaretoken', csrf);
+
+            $.ajax({
+                        url:'{% url 'report_ajax' %}',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        type: "POST",
+                        data: formData,
+
+                        success: function(data, textStatus, jqXHR){
+                            alert(data['message']);
+
+                            button.prop('disabled', false);
+                        }
+                });
+        });
+
+    </script>
+
+{% endblock %}

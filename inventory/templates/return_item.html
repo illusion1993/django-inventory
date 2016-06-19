@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Return Item{% endblock %}
+
+{% if messages %}
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+{% endif %}
+
+{% block content %}
+
+    <h1>Return Item</h1>
+
+
+    <form action="" method="post">
+        {% csrf_token %}
+        <p>Are you sure to mark this item returned?</p>
+        <p><b>{{ provision.item.name }}</b> issued to <b>{{ provision.user.email }}</b>, quantity : <b>{{ provision.quantity }}</b></p>
+
+        <button type="submit" class="save btn btn-default">Yes</button>
+        <a href="{% url 'provision_list' %}" class="btn btn-default">No</a>
+    </form>
+
+{% endblock %}

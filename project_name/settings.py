@@ -6,13 +6,15 @@ from os.path import abspath, basename, dirname, join, normpath
 
 ########## PATH CONFIGURATION
 # Absolute filesystem path to the Django project directory:
+from django.core.urlresolvers import reverse_lazy
+
 BASE_DIR = dirname(abspath(__file__))
 ########## END PATH CONFIGURATION
 
 
 ########## DEBUG CONFIGURATION
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#debug
-DEBUG = False
+DEBUG = True
 ########## END DEBUG CONFIGURATION
 
 
@@ -175,7 +177,12 @@ DJANGO_APPS = (
 
 THIRD_PARTY_APPS = (
     # Static file management:
+    'celery',
     'compressor',
+    'inventory',
+    'datetimewidget',
+    'dal',
+    'dal_select2',
 )
 
 LOCAL_APPS = (
@@ -198,13 +205,15 @@ CACHES = {
 
 
 ########## EMAIL CONFIGURATION
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'your_email@example.com'
-EMAIL_HOST_PASSWORD = ''
-DEFAULT_FROM_EMAIL = 'webmaster.default@example.com'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_HOST_USER = 'your_email@example.com'
+# EMAIL_HOST_PASSWORD = ''
+# DEFAULT_FROM_EMAIL = 'webmaster.default@example.com'
+#
+# EMAIL_USE_TLS = True
 ########## END EMAIL CONFIGURATION
 
 
@@ -264,3 +273,14 @@ TEMPLATE_DEBUG = DEBUG
 
 
 COMPRESS_URL = STATIC_URL
+
+AUTH_USER_MODEL = 'inventory.User'
+LOGIN_URL = reverse_lazy('login')
+
+# CELERY STUFF
+BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'

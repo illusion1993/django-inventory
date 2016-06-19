@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Add Item{% endblock %}
+
+{% if messages %}
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+{% endif %}
+
+{% block content %}
+    <h1>New Item</h1>
+    <form method="POST" class="item-form">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="save btn btn-default">Save</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-default">Cancel</a>
+    </form>
+{% endblock %}

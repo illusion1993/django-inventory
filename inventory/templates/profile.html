@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Management|Profile{% endblock %}
+
+{% block content %}
+    <h1>View Profile</h1>
+    <a href="{% url 'edit_profile' %}">Edit profile</a>
+    <table class="table-bordered">
+        <tr>
+            <th>Email</th>
+            <td>{{ user.email }}</td>
+        </tr>
+        <tr>
+            <th>First Name</th>
+            <td>{{ user.first_name }}</td>
+        </tr>
+        <tr>
+            <th>Last Name</th>
+            <td>{{ user.last_name }}</td>
+        </tr>
+        <tr>
+            <th>Phone</th>
+            <td>{{ user.phone }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>{{ user.address }}</td>
+        </tr>
+        <tr>
+            <th>Id Number</th>
+            <td>{{ user.id_number }}</td>
+        </tr>
+        <tr>
+            <th>Image</th>
+            <td><img src="{% if user.image %}{{ user.image.url }}{% endif %}" alt=""/></td>
+        </tr>
+    </table>
+
+{% endblock %}
