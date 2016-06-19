@@ -236,8 +236,6 @@ class AnonymousTestCase(TestCase):
         self.assertEqual(str(messages[0]), LOGIN_REQUIRED_MESSAGE)
 
 
-
-
 class UserTestCase(TestCase):
     """
     Test cases for a logged in inventory user

@@ -59,16 +59,6 @@
         </tfoot>
     </table>
 
-    <form action="http://127.0.0.1:8000/report/ajax/" method="post">
-        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
-        <input name="r" type="hidden" value="true"/>
-        <input name="nr" type="hidden" value="true"/>
-        <input name="sd" type="hidden" value="2016-02-02"/>
-        <input name="ed" type="hidden" value="2016-02-17"/>
-        <input name="kw" type="hidden" value="dell"/>
-        <input type="submit"/>
-    </form>
-
     <script>
         // Javascript variables
         var csrf = '{{ csrf_token }}';
