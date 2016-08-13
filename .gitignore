@@ -1,6 +1,8 @@
 # Python bytecode:
 *.py[co]
 
+*.pyc
+
 # Packaging files:
 *.egg*
 
@@ -13,3 +15,6 @@
 
 .idea
 .htaccess
+
+# Django Local Settings
+local_settings.py
